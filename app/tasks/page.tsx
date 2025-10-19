@@ -42,8 +42,8 @@ export default function TaskManagementPage() {
       setSelectedProjectId(projectId);
     }
   }, []);
-  // 控制任务显示状态 - 初始化为true，确保页面加载时默认显示任务
-  const [showTasks, setShowTasks] = useState(true);
+  // 控制任务显示状态 - 只有选择了特定项目才显示任务
+  const [showTasks, setShowTasks] = useState(false);
   
   // 任务状态管理
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -83,7 +83,7 @@ export default function TaskManagementPage() {
     description: '',
     status: 'planning' as Project['status'],
     deadline: '',
-    color: '#3b82f6',
+    color: '#64748b',
   });
 
 
@@ -93,91 +93,47 @@ export default function TaskManagementPage() {
     // 确保在客户端环境中运行
     if (typeof window !== 'undefined') {
       console.log('在客户端环境中初始化数据');
-      
+
       // 从本地存储加载项目
       const savedProjects = localStorage.getItem('projects');
       if (savedProjects) {
         try {
           const parsedProjects = JSON.parse(savedProjects);
-          setProjects(parsedProjects);
-          console.log('从本地存储加载项目数据成功');
+          if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
+            setProjects(parsedProjects);
+            console.log('从本地存储加载项目数据成功，共', parsedProjects.length, '个项目');
+          } else {
+            console.log('本地存储中的项目数据为空，初始化空项目列表');
+            initializeEmptyProjects();
+          }
         } catch (error) {
           console.error('解析项目数据失败:', error);
-          setProjects([]);
+          initializeEmptyProjects();
         }
       } else {
-        // 初始化模拟项目数据
-        const mockProjects: Project[] = [
-          {
-            id: '1',
-            title: '网站重构项目',
-            description: '重新设计和开发公司官网',
-            status: 'active',
-            createdAt: '2024-12-01T08:00:00',
-            updatedAt: '2024-12-05T10:30:00',
-            deadline: '2025-01-15',
-            color: '#3b82f6',
-            keywords: ['网站', '设计', '开发']
-          },
-          {
-            id: '2',
-            title: '学习计划',
-            description: 'React和Next.js学习计划',
-            status: 'active',
-            createdAt: '2024-12-02T09:15:00',
-            updatedAt: '2024-12-03T16:45:00',
-            deadline: '2025-03-31',
-            color: '#8b5cf6',
-            keywords: ['学习', 'React', 'Next.js']
-          }
-        ];
-        setProjects(mockProjects);
-        localStorage.setItem('projects', JSON.stringify(mockProjects));
-        console.log('初始化模拟项目数据并保存到本地存储');
+        console.log('本地存储中没有项目数据，初始化空项目列表');
+        initializeEmptyProjects();
       }
+
       // 从本地存储加载团队成员
       const savedMembers = localStorage.getItem('teamMembers');
       if (savedMembers) {
         try {
           const parsedMembers = JSON.parse(savedMembers);
-          setTeamMembers(parsedMembers);
-          console.log('从本地存储加载团队成员数据成功');
+          if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
+            setTeamMembers(parsedMembers);
+            console.log('从本地存储加载团队成员数据成功，共', parsedMembers.length, '个成员');
+          } else {
+            console.log('本地存储中的团队成员数据为空，初始化模拟数据');
+            initializeMockMembers();
+          }
         } catch (error) {
           console.error('解析团队成员数据失败:', error);
-          setTeamMembers([]);
+          initializeMockMembers();
         }
       } else {
-        // 初始化模拟团队成员数据
-        const mockMembers: TeamMember[] = [
-        {
-          id: '1',
-          email: user?.email || 'admin@example.com',
-          name: user?.name || '管理员',
-          picture: user?.picture,
-          role: 'admin',
-          status: 'active',
-          joinedAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          email: 'member1@example.com',
-          name: '张三',
-          role: 'member',
-          status: 'active',
-          joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          email: 'member2@example.com',
-          name: '李四',
-          role: 'member',
-          status: 'active',
-          joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-        setTeamMembers(mockMembers);
-        localStorage.setItem('teamMembers', JSON.stringify(mockMembers));
-        console.log('初始化模拟团队成员数据并保存到本地存储');
+        console.log('本地存储中没有团队成员数据，初始化模拟数据');
+        initializeMockMembers();
       }
     } else {
       // 服务器端渲染时的默认值
@@ -185,101 +141,120 @@ export default function TaskManagementPage() {
       setTeamMembers([]);
       console.log('在服务器端渲染，使用默认空数据');
     }
-  }, [user]);
+  }, []); // 移除user依赖，确保数据尽早初始化
+
+  // 初始化项目数据（默认为空，等待用户创建）
+  const initializeEmptyProjects = () => {
+    console.log('初始化空的项目列表');
+    setProjects([]);
+
+    try {
+      localStorage.setItem('projects', JSON.stringify([]));
+      console.log('空项目列表已保存到本地存储');
+    } catch (error) {
+      console.error('保存空项目列表到本地存储失败:', error);
+    }
+  };
+
+  // 初始化模拟团队成员的函数
+  const initializeMockMembers = () => {
+    const mockMembers: TeamMember[] = [
+      {
+        id: '1',
+        email: user?.email || 'admin@example.com',
+        name: user?.name || '管理员',
+        picture: user?.picture,
+        role: 'admin',
+        status: 'active',
+        joinedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        email: 'member1@example.com',
+        name: '张三',
+        role: 'member',
+        status: 'active',
+        joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: '3',
+        email: 'member2@example.com',
+        name: '李四',
+        role: 'member',
+        status: 'active',
+        joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+
+    console.log('设置模拟团队成员数据:', mockMembers);
+    setTeamMembers(mockMembers);
+
+    try {
+      localStorage.setItem('teamMembers', JSON.stringify(mockMembers));
+      console.log('模拟团队成员数据已保存到本地存储');
+    } catch (error) {
+      console.error('保存模拟团队成员数据到本地存储失败:', error);
+    }
+  };
   
   // 初始化模拟任务数据
   useEffect(() => {
     // 确保在客户端环境中运行
     if (typeof window !== 'undefined') {
-      // 从本地存储加载任务，如果没有则使用模拟数据
+      console.log('开始初始化任务数据...');
+
+      // 从本地存储加载任务，如果没有则使用空任务列表
       try {
         const savedTasks = localStorage.getItem('tasks');
-        if (savedTasks) {
-          setTasks(JSON.parse(savedTasks));
-          console.log('从本地存储加载任务数据成功');
+        console.log('从本地存储读取的任务数据:', savedTasks);
+
+        if (savedTasks && savedTasks.trim() !== '') {
+          const parsedTasks = JSON.parse(savedTasks);
+          console.log('解析后的任务数据:', parsedTasks);
+
+          if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
+            setTasks(parsedTasks);
+            console.log('从本地存储加载任务数据成功，共', parsedTasks.length, '个任务');
+          } else {
+            console.log('本地存储中的任务数据为空或格式错误，初始化空任务列表');
+            initializeEmptyTasks();
+          }
         } else {
-          // 模拟数据 - 与项目关联
-          const mockTasks: Task[] = [
-        {
-          id: '1',
-          title: '完成项目提案',
-          description: '准备下周会议的项目提案文档，包括预算和时间线',
-          status: 'in-progress',
-          category: 'work',
-          priority: 'high',
-          dueDate: '2024-12-15',
-          createdAt: '2024-12-01T08:30:00',
-          projectId: '1',
-          assigneeId: '2', // 分配给张三
-          assignedAt: '2024-12-01T09:00:00',
-          comments: [
-            {
-              id: '101',
-              authorId: '1',
-              authorName: user?.name || '管理员',
-              authorPicture: user?.picture,
-              content: '请在周三前完成初稿',
-              createdAt: '2024-12-01T09:15:00'
-            },
-            {
-              id: '102',
-              authorId: '2',
-              authorName: '张三',
-              content: '好的，我会按时完成',
-              createdAt: '2024-12-01T10:30:00'
-            }
-          ]
-        },
-        {
-          id: '2',
-          title: '学习React Hooks',
-          description: '完成React高级Hooks特性学习，包括自定义Hooks',
-          status: 'todo',
-          category: 'learning',
-          priority: 'medium',
-          dueDate: '2024-12-20',
-          createdAt: '2024-12-02T10:15:00',
-          projectId: '2',
-          assigneeId: '3', // 分配给李四
-          assignedAt: '2024-12-02T11:00:00',
-        },
-        {
-          id: '3',
-          title: '锻炼',
-          description: '去健身房进行45分钟的有氧运动',
-          status: 'completed',
-          category: 'personal',
-          priority: 'low',
-          dueDate: '2024-12-05',
-          createdAt: '2024-12-03T18:00:00',
-          completedAt: '2024-12-05T19:30:00',
-          assigneeId: '1', // 分配给管理员
-          assignedAt: '2024-12-03T18:30:00',
-          // 个人任务没有关联项目
-        },
-        {
-          id: '4',
-          title: '购买生日礼物',
-          description: '为朋友准备生日礼物',
-          status: 'todo',
-          category: 'personal',
-          priority: 'medium',
-          dueDate: '2024-12-25',
-          createdAt: '2024-12-04T14:20:00',
-          assigneeId: '1', // 分配给管理员
-          assignedAt: '2024-12-04T15:00:00',
-          // 个人任务没有关联项目
-        },
-      ];
-          setTasks(mockTasks);
-          localStorage.setItem('tasks', JSON.stringify(mockTasks));
-          console.log('初始化模拟任务数据并保存到本地存储');
+          console.log('本地存储中没有任务数据，初始化空任务列表');
+          initializeEmptyTasks();
         }
       } catch (error) {
-        console.error('加载或保存任务数据时出错:', error);
+        console.error('加载任务数据时出错:', error);
+        console.log('使用空任务列表作为备用');
+        initializeEmptyTasks();
       }
     }
   }, []);
+
+  // 初始化空任务列表的函数
+  const initializeEmptyTasks = () => {
+    console.log('初始化空的任务列表');
+    setTasks([]);
+
+    try {
+      localStorage.setItem('tasks', JSON.stringify([]));
+      console.log('空任务列表已保存到本地存储');
+    } catch (error) {
+      console.error('保存空任务列表到本地存储失败:', error);
+    }
+  };
+
+  // 监听任务变化，自动保存到localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && tasks.length > 0) {
+      try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        console.log('任务状态变化后自动保存到localStorage，共', tasks.length, '个任务');
+      } catch (error) {
+        console.error('自动保存任务到localStorage失败:', error);
+      }
+    }
+  }, [tasks]);
 
   // 监听URL参数变化
   useEffect(() => {
@@ -288,14 +263,14 @@ export default function TaskManagementPage() {
       const handleUrlChange = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const projectId = urlParams.get('projectId');
-        
+
         if (projectId && projectId !== selectedProjectId) {
           setSelectedProjectId(projectId);
           setShowTasks(true);
         } else if (!projectId) {
-          // 没有URL参数时，也应显示任务（显示所有项目的任务）
+          // 没有URL参数时，不显示任务，需要用户先选择项目
           setSelectedProjectId('all');
-          setShowTasks(true);
+          setShowTasks(false);
         }
       }
 
@@ -304,7 +279,7 @@ export default function TaskManagementPage() {
 
       // 监听浏览器前进后退按钮事件
       window.addEventListener('popstate', handleUrlChange);
-      
+
       // 清理函数
       return () => {
         window.removeEventListener('popstate', handleUrlChange);
@@ -314,37 +289,49 @@ export default function TaskManagementPage() {
   
   // 保存项目到本地存储
   useEffect(() => {
-    console.log('项目状态更新，保存到本地存储:', projects);
-    // 无论项目数组是否为空，都保存到本地存储
-    try {
-      localStorage.setItem('projects', JSON.stringify(projects));
-      console.log('项目保存成功');
-    } catch (error) {
-      console.error('保存项目到本地存储失败:', error);
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      console.log('项目状态更新，保存到本地存储:', projects);
+      // 无论项目数组是否为空，都保存到本地存储
+      try {
+        const projectsJson = JSON.stringify(projects);
+        localStorage.setItem('projects', projectsJson);
+        console.log('项目保存成功，数据大小:', projectsJson.length, '字节');
+      } catch (error) {
+        console.error('保存项目到本地存储失败:', error);
+      }
     }
   }, [projects]);
   
   // 保存任务到本地存储
   useEffect(() => {
-    console.log('任务状态更新，保存到本地存储:', tasks);
-    // 无论任务数组是否为空，都保存到本地存储
-    try {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-      console.log('任务保存成功');
-    } catch (error) {
-      console.error('保存任务到本地存储失败:', error);
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      console.log('任务状态更新，保存到本地存储:', tasks);
+      // 无论任务数组是否为空，都保存到本地存储
+      try {
+        const tasksJson = JSON.stringify(tasks);
+        localStorage.setItem('tasks', tasksJson);
+        console.log('任务保存成功，数据大小:', tasksJson.length, '字节');
+      } catch (error) {
+        console.error('保存任务到本地存储失败:', error);
+      }
     }
   }, [tasks]);
   
   // 保存团队成员到本地存储
   useEffect(() => {
-    console.log('团队成员状态更新，保存到本地存储:', teamMembers);
-    // 无论团队成员数组是否为空，都保存到本地存储
-    try {
-      localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
-      console.log('团队成员保存成功');
-    } catch (error) {
-      console.error('保存团队成员到本地存储失败:', error);
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      console.log('团队成员状态更新，保存到本地存储:', teamMembers);
+      // 无论团队成员数组是否为空，都保存到本地存储
+      try {
+        const membersJson = JSON.stringify(teamMembers);
+        localStorage.setItem('teamMembers', membersJson);
+        console.log('团队成员保存成功，数据大小:', membersJson.length, '字节');
+      } catch (error) {
+        console.error('保存团队成员到本地存储失败:', error);
+      }
     }
   }, [teamMembers]);
   
@@ -367,13 +354,27 @@ export default function TaskManagementPage() {
     const project = projects.find(p => p.id === projectId);
     return project?.color || '#94a3b8';
   };
+
+  // 计算项目完成率
+  const getProjectCompletionRate = (projectId: string) => {
+    const projectTasks = tasks.filter(task => task.projectId === projectId);
+    if (projectTasks.length === 0) return 0;
+
+    const completedTasks = projectTasks.filter(task => task.status === 'completed');
+    return Math.round((completedTasks.length / projectTasks.length) * 100);
+  };
   
   // 处理项目选择
   const handleProjectSelect = (projectId: string) => {
     setSelectedProjectId(projectId);
-    // 无论选择哪个项目，都显示任务
-    setShowTasks(true);
-    console.log('项目选择更新为:', projectId);
+    // 只有选择了特定项目（非'all'）才显示任务
+    if (projectId !== 'all') {
+      setShowTasks(true);
+      console.log('选择了项目，显示任务:', projectId);
+    } else {
+      setShowTasks(false);
+      console.log('选择了"所有项目"，不显示任务，需要先选择具体项目');
+    }
   };
   
   // 打开添加项目对话框
@@ -384,7 +385,7 @@ export default function TaskManagementPage() {
       description: '',
       status: 'planning',
       deadline: '',
-      color: '#3b82f6',
+      color: '#64748b',
     });
     setIsAddProjectDialogOpen(true);
   };
@@ -397,7 +398,7 @@ export default function TaskManagementPage() {
       description: project.description,
       status: project.status,
       deadline: project.deadline || '',
-      color: project.color || '#3b82f6',
+      color: project.color || '#64748b',
     });
     setIsAddProjectDialogOpen(true);
   };
@@ -503,7 +504,7 @@ export default function TaskManagementPage() {
         description: '',
         status: 'planning',
         deadline: '',
-        color: '#3b82f6',
+        color: '#64748b',
       });
     }
     
@@ -620,11 +621,11 @@ export default function TaskManagementPage() {
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date().toISOString();
-    
+
     if (editingTask) {
       // 编辑现有任务
-      setTasks(prevTasks => 
-        prevTasks.map(task => {
+      setTasks(prevTasks => {
+        const updatedTasks = prevTasks.map(task => {
           if (task.id === editingTask.id) {
             // 如果改变了负责人，更新分配时间
             const updatedTask = {
@@ -632,16 +633,26 @@ export default function TaskManagementPage() {
               ...formData,
               updatedAt: now,
             };
-            
+
             if (formData.assigneeId !== task.assigneeId) {
               updatedTask.assignedAt = now;
             }
-            
+
             return updatedTask;
           }
           return task;
-        })
-      );
+        });
+
+        // 保存到localStorage
+        try {
+          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+          console.log('编辑任务后已保存到localStorage');
+        } catch (error) {
+          console.error('保存编辑的任务到localStorage失败:', error);
+        }
+
+        return updatedTasks;
+      });
     } else {
       // 添加新任务
       const newTask: Task = {
@@ -650,16 +661,28 @@ export default function TaskManagementPage() {
         createdAt: now,
         assignedAt: formData.assigneeId ? now : undefined,
       };
-      setTasks(prevTasks => [...prevTasks, newTask]);
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks, newTask];
+
+        // 保存到localStorage
+        try {
+          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+          console.log('添加新任务后已保存到localStorage');
+        } catch (error) {
+          console.error('保存新任务到localStorage失败:', error);
+        }
+
+        return updatedTasks;
+      });
     }
-    
+
     setIsAddDialogOpen(false);
   };
   
   // 处理任务状态变更
   const handleToggleComplete = (taskId: string) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task =>
         task.id === taskId
           ? {
               ...task,
@@ -667,13 +690,35 @@ export default function TaskManagementPage() {
               completedAt: task.status === 'completed' ? undefined : new Date().toISOString(),
             }
           : task
-      )
-    );
+      );
+
+      // 保存到localStorage
+      try {
+        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        console.log('任务状态变更后已保存到localStorage');
+      } catch (error) {
+        console.error('保存任务状态变更到localStorage失败:', error);
+      }
+
+      return updatedTasks;
+    });
   };
-  
+
   // 处理任务删除
   const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.filter(task => task.id !== taskId);
+
+      // 保存到localStorage
+      try {
+        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        console.log('删除任务后已保存到localStorage');
+      } catch (error) {
+        console.error('保存删除任务到localStorage失败:', error);
+      }
+
+      return updatedTasks;
+    });
   };
 
   // 根据当前选择的项目过滤任务
@@ -720,8 +765,8 @@ export default function TaskManagementPage() {
 
   // 处理状态变更
   const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task =>
         task.id === taskId
           ? {
               ...task,
@@ -729,8 +774,18 @@ export default function TaskManagementPage() {
               completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
             }
           : task
-      )
-    );
+      );
+
+      // 保存到localStorage
+      try {
+        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+        console.log('状态变更后已保存到localStorage');
+      } catch (error) {
+        console.error('保存状态变更到localStorage失败:', error);
+      }
+
+      return updatedTasks;
+    });
   };
 
   // 格式化日期显示
@@ -829,12 +884,41 @@ export default function TaskManagementPage() {
                     status: 'planning',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
-                    color: '#3b82f6'
+                    color: '#64748b'
                   };
                   console.log('直接添加测试项目:', testProject);
                   setProjects(prev => [...prev, testProject]);
                 }}>
                   测试项目
+                </Button>
+
+                {/* 调试按钮 - 检查本地存储 */}
+                <Button variant="outline" onClick={() => {
+                  console.log('=== 本地存储调试信息 ===');
+                  console.log('tasks:', localStorage.getItem('tasks'));
+                  console.log('projects:', localStorage.getItem('projects'));
+                  console.log('teamMembers:', localStorage.getItem('teamMembers'));
+                  console.log('当前状态:');
+                  console.log('- 任务数量:', tasks.length);
+                  console.log('- 项目数量:', projects.length);
+                  console.log('- 团队成员数量:', teamMembers.length);
+                  alert(`调试信息已输出到控制台\n任务: ${tasks.length}个\n项目: ${projects.length}个\n团队成员: ${teamMembers.length}个`);
+                }}>
+                  调试存储
+                </Button>
+
+                {/* 清空项目数据按钮 */}
+                <Button variant="secondary" onClick={() => {
+                  if (confirm('确定要清空所有项目数据吗？这将删除所有项目和相关任务。')) {
+                    console.log('清空项目数据...');
+                    initializeEmptyProjects();
+                    // 同时清空任务数据
+                    setTasks([]);
+                    localStorage.setItem('tasks', JSON.stringify([]));
+                    alert('项目数据已清空，现在可以创建新项目了');
+                  }
+                }}>
+                  清空项目
                 </Button>
               </div>
             </div>
@@ -894,60 +978,90 @@ export default function TaskManagementPage() {
         {/* 项目列表 */}
         <div className="container mx-auto px-4 py-4 mb-6">
           <h2 className="text-lg font-semibold mb-3">我的项目</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {projects.map(project => (
-              <Card key={project.id} className={`border overflow-hidden ${selectedProjectId === project.id ? 'ring-2 ring-primary' : ''}`}>
-                <div className="p-4 flex justify-between items-start gap-3 cursor-pointer hover:bg-muted/30 rounded-md transition-colors" onClick={() => handleProjectSelect(project.id)}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 min-w-0">
-                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: project.color }}></div>
-                      <h3 className="font-medium truncate min-w-0">{project.title}</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 min-w-0">{project.description}</p>
-                    {/* 显示关键词标签 */}
-                    {project.keywords && project.keywords.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {project.keywords.map((keyword, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs py-0 px-1.5">
-                            #{keyword}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={projectStatusLabels[project.status].color}>
-                        {projectStatusLabels[project.status].label}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {tasks.filter(t => t.projectId === project.id).length} 个任务
-                      </span>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button 
-                        className="p-1.5 rounded-full hover:bg-muted transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="项目操作菜单"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleOpenEditProjectDialog(project)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>编辑项目</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteProject(project.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>删除项目</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          {projects.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <PlusCircle className="w-8 h-8 text-muted-foreground" />
                 </div>
-              </Card>
-            ))}
-          </div>
+                <h3 className="text-lg font-semibold mb-2">还没有项目</h3>
+                <p className="text-muted-foreground mb-4">
+                  点击上方的"添加项目"按钮来创建你的第一个项目
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  项目是组织任务的最佳方式，你可以为不同的工作创建不同的项目
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {projects.map(project => (
+                <Card key={project.id} className={`border overflow-hidden ${selectedProjectId === project.id ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="p-4 flex justify-between items-start gap-3 cursor-pointer hover:bg-muted/30 rounded-md transition-colors" onClick={() => handleProjectSelect(project.id)}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 min-w-0">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: project.color }}></div>
+                        <h3 className="font-medium truncate min-w-0">{project.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2 min-w-0">{project.description}</p>
+                      {/* 显示关键词标签 */}
+                      {project.keywords && project.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {project.keywords.map((keyword, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs py-0 px-1.5">
+                              #{keyword}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className={projectStatusLabels[project.status].color}>
+                          {projectStatusLabels[project.status].label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {tasks.filter(t => t.projectId === project.id).length} 个任务
+                        </span>
+                      </div>
+                      {/* 项目完成进度 */}
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">完成进度</span>
+                          <span className="text-xs font-medium">{getProjectCompletionRate(project.id)}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div
+                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${getProjectCompletionRate(project.id)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="项目操作菜单"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleOpenEditProjectDialog(project)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>编辑项目</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteProject(project.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>删除项目</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
       {/* 主要内容 */}
@@ -1088,12 +1202,24 @@ export default function TaskManagementPage() {
           </>
         ) : (
           <div className="text-center py-12 bg-muted/30 rounded-lg">
-            <p className="text-muted-foreground mb-2">请选择一个项目来查看和管理任务</p>
-            {selectedProjectId === 'all' ? (
-              <p className="text-sm text-muted-foreground">从上方项目列表中点击项目卡片开始</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">您已经选择了项目 "{getProjectName(selectedProjectId)}"，任务列表已准备就绪</p>
-            )}
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckSquare className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">请选择一个项目</h3>
+              <p className="text-muted-foreground mb-4">
+                从上方的项目卡片中选择一个项目来查看和管理相关任务
+              </p>
+              {projects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  还没有项目？点击上方的"添加项目"按钮创建你的第一个项目
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  项目是组织任务的最佳方式，每个项目都有自己独立的任务列表
+                </p>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -1435,7 +1561,7 @@ export default function TaskManagementPage() {
             <div className="space-y-2">
               <Label htmlFor="projectColor">Project Color</Label>
               <div className="flex flex-wrap gap-2">
-                {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6b7280'].map(color => (
+                {['#64748b', '#6b7280', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#94a3b8'].map(color => (
                   <button
                     key={color}
                     type="button"

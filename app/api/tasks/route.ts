@@ -8,7 +8,7 @@ import { Task } from '@/types/task';
  * 获取所有任务的API端点
  * @returns 任务列表或错误信息
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
       // 检查用户认证状态
       const cookieStore = await cookies();
@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
         priority: 'high',
         category: 'work',
         createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        estimatedHours: 2
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       {
         id: 'task-2',
@@ -42,8 +41,7 @@ export async function GET(request: NextRequest) {
         priority: 'medium',
         category: 'work',
         createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        estimatedHours: 4
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       {
         id: 'task-3',
@@ -53,16 +51,11 @@ export async function GET(request: NextRequest) {
         priority: 'low',
         category: 'learning',
         createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        estimatedHours: 3
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       }
     ];
 
-    return NextResponse.json({
-      success: true,
-      tasks: mockTasks,
-      total: mockTasks.length
-    });
+    return NextResponse.json(mockTasks);
   } catch (error) {
     console.error('获取任务失败:', error);
     return NextResponse.json(
@@ -80,7 +73,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 检查用户认证状态
-    const sessionCookie = cookies().get('user_session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('user_session')?.value;
     if (!sessionCookie) {
       return NextResponse.json(
         { error: '用户未登录' },
@@ -90,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // 解析请求体
     const taskData = await request.json();
-    
+
     // 验证必要字段
     if (!taskData.title || typeof taskData.title !== 'string' || taskData.title.trim().length === 0) {
       return NextResponse.json(
@@ -109,8 +103,7 @@ export async function POST(request: NextRequest) {
       priority: taskData.priority || 'medium',
       category: taskData.category || 'work',
       createdAt: new Date().toISOString(),
-      dueDate: taskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      estimatedHours: taskData.estimatedHours || undefined
+      dueDate: taskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
 
     return NextResponse.json({
