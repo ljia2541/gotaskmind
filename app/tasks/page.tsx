@@ -42,11 +42,8 @@ export default function TaskManagementPage() {
       setSelectedProjectId(projectId);
     }
   }, []);
-  // 控制任务显示状态 - 如果有projectId参数则立即显示任务
-  const [showTasks, setShowTasks] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return !!urlParams.get('projectId');
-  });
+  // 控制任务显示状态 - 初始化为true，确保页面加载时默认显示任务
+  const [showTasks, setShowTasks] = useState(true);
   
   // 任务状态管理
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -93,59 +90,65 @@ export default function TaskManagementPage() {
 
   // 初始化项目和团队成员数据
   useEffect(() => {
-    // 从本地存储加载项目
-    const savedProjects = localStorage.getItem('projects');
-    if (savedProjects) {
-      try {
-        const parsedProjects = JSON.parse(savedProjects);
-        setProjects(parsedProjects);
-      } catch (error) {
-        console.error('解析项目数据失败:', error);
-        setProjects([]);
-      }
-    } else {
-      // 初始化模拟项目数据
-      const mockProjects: Project[] = [
-        {
-          id: '1',
-          title: '网站重构项目',
-          description: '重新设计和开发公司官网',
-          status: 'active',
-          createdAt: '2024-12-01T08:00:00',
-          updatedAt: '2024-12-05T10:30:00',
-          deadline: '2025-01-15',
-          color: '#3b82f6',
-          keywords: ['网站', '设计', '开发']
-        },
-        {
-          id: '2',
-          title: '学习计划',
-          description: 'React和Next.js学习计划',
-          status: 'active',
-          createdAt: '2024-12-02T09:15:00',
-          updatedAt: '2024-12-03T16:45:00',
-          deadline: '2025-03-31',
-          color: '#8b5cf6',
-          keywords: ['学习', 'React', 'Next.js']
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      console.log('在客户端环境中初始化数据');
+      
+      // 从本地存储加载项目
+      const savedProjects = localStorage.getItem('projects');
+      if (savedProjects) {
+        try {
+          const parsedProjects = JSON.parse(savedProjects);
+          setProjects(parsedProjects);
+          console.log('从本地存储加载项目数据成功');
+        } catch (error) {
+          console.error('解析项目数据失败:', error);
+          setProjects([]);
         }
-      ];
-      setProjects(mockProjects);
-      localStorage.setItem('projects', JSON.stringify(mockProjects));
-    }
-    
-    // 从本地存储加载团队成员
-    const savedMembers = localStorage.getItem('teamMembers');
-    if (savedMembers) {
-      try {
-        const parsedMembers = JSON.parse(savedMembers);
-        setTeamMembers(parsedMembers);
-      } catch (error) {
-        console.error('解析团队成员数据失败:', error);
-        setTeamMembers([]);
+      } else {
+        // 初始化模拟项目数据
+        const mockProjects: Project[] = [
+          {
+            id: '1',
+            title: '网站重构项目',
+            description: '重新设计和开发公司官网',
+            status: 'active',
+            createdAt: '2024-12-01T08:00:00',
+            updatedAt: '2024-12-05T10:30:00',
+            deadline: '2025-01-15',
+            color: '#3b82f6',
+            keywords: ['网站', '设计', '开发']
+          },
+          {
+            id: '2',
+            title: '学习计划',
+            description: 'React和Next.js学习计划',
+            status: 'active',
+            createdAt: '2024-12-02T09:15:00',
+            updatedAt: '2024-12-03T16:45:00',
+            deadline: '2025-03-31',
+            color: '#8b5cf6',
+            keywords: ['学习', 'React', 'Next.js']
+          }
+        ];
+        setProjects(mockProjects);
+        localStorage.setItem('projects', JSON.stringify(mockProjects));
+        console.log('初始化模拟项目数据并保存到本地存储');
       }
-    } else {
-      // 初始化模拟团队成员数据
-      const mockMembers: TeamMember[] = [
+      // 从本地存储加载团队成员
+      const savedMembers = localStorage.getItem('teamMembers');
+      if (savedMembers) {
+        try {
+          const parsedMembers = JSON.parse(savedMembers);
+          setTeamMembers(parsedMembers);
+          console.log('从本地存储加载团队成员数据成功');
+        } catch (error) {
+          console.error('解析团队成员数据失败:', error);
+          setTeamMembers([]);
+        }
+      } else {
+        // 初始化模拟团队成员数据
+        const mockMembers: TeamMember[] = [
         {
           id: '1',
           email: user?.email || 'admin@example.com',
@@ -172,20 +175,31 @@ export default function TaskManagementPage() {
           joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
-      setTeamMembers(mockMembers);
-      localStorage.setItem('teamMembers', JSON.stringify(mockMembers));
+        setTeamMembers(mockMembers);
+        localStorage.setItem('teamMembers', JSON.stringify(mockMembers));
+        console.log('初始化模拟团队成员数据并保存到本地存储');
+      }
+    } else {
+      // 服务器端渲染时的默认值
+      setProjects([]);
+      setTeamMembers([]);
+      console.log('在服务器端渲染，使用默认空数据');
     }
   }, [user]);
   
   // 初始化模拟任务数据
   useEffect(() => {
-    // 从本地存储加载任务，如果没有则使用模拟数据
-    const savedTasks = localStorage.getItem('tasks');
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    } else {
-      // 模拟数据 - 与项目关联
-      const mockTasks: Task[] = [
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      // 从本地存储加载任务，如果没有则使用模拟数据
+      try {
+        const savedTasks = localStorage.getItem('tasks');
+        if (savedTasks) {
+          setTasks(JSON.parse(savedTasks));
+          console.log('从本地存储加载任务数据成功');
+        } else {
+          // 模拟数据 - 与项目关联
+          const mockTasks: Task[] = [
         {
           id: '1',
           title: '完成项目提案',
@@ -257,33 +271,45 @@ export default function TaskManagementPage() {
           // 个人任务没有关联项目
         },
       ];
-      setTasks(mockTasks);
-      localStorage.setItem('tasks', JSON.stringify(mockTasks));
+          setTasks(mockTasks);
+          localStorage.setItem('tasks', JSON.stringify(mockTasks));
+          console.log('初始化模拟任务数据并保存到本地存储');
+        }
+      } catch (error) {
+        console.error('加载或保存任务数据时出错:', error);
+      }
     }
   }, []);
 
   // 监听URL参数变化
   useEffect(() => {
-    const handleUrlChange = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const projectId = urlParams.get('projectId');
-      
-      if (projectId && projectId !== selectedProjectId) {
-        setSelectedProjectId(projectId);
-        setShowTasks(true);
-      } else if (!projectId && selectedProjectId !== 'all') {
-        setSelectedProjectId('all');
-        setShowTasks(false);
+    // 在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      const handleUrlChange = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const projectId = urlParams.get('projectId');
+        
+        if (projectId && projectId !== selectedProjectId) {
+          setSelectedProjectId(projectId);
+          setShowTasks(true);
+        } else if (!projectId) {
+          // 没有URL参数时，也应显示任务（显示所有项目的任务）
+          setSelectedProjectId('all');
+          setShowTasks(true);
+        }
       }
-    }
 
-    // 监听浏览器前进后退按钮事件
-    window.addEventListener('popstate', handleUrlChange);
-    
-    // 清理函数
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-    };
+      // 初始化时调用一次，处理初始URL参数
+      handleUrlChange();
+
+      // 监听浏览器前进后退按钮事件
+      window.addEventListener('popstate', handleUrlChange);
+      
+      // 清理函数
+      return () => {
+        window.removeEventListener('popstate', handleUrlChange);
+      };
+    }
   }, [selectedProjectId]);
   
   // 保存项目到本地存储
@@ -300,15 +326,25 @@ export default function TaskManagementPage() {
   
   // 保存任务到本地存储
   useEffect(() => {
-    if (tasks.length > 0) {
+    console.log('任务状态更新，保存到本地存储:', tasks);
+    // 无论任务数组是否为空，都保存到本地存储
+    try {
       localStorage.setItem('tasks', JSON.stringify(tasks));
+      console.log('任务保存成功');
+    } catch (error) {
+      console.error('保存任务到本地存储失败:', error);
     }
   }, [tasks]);
   
   // 保存团队成员到本地存储
   useEffect(() => {
-    if (teamMembers.length > 0) {
+    console.log('团队成员状态更新，保存到本地存储:', teamMembers);
+    // 无论团队成员数组是否为空，都保存到本地存储
+    try {
       localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+      console.log('团队成员保存成功');
+    } catch (error) {
+      console.error('保存团队成员到本地存储失败:', error);
     }
   }, [teamMembers]);
   
@@ -335,8 +371,9 @@ export default function TaskManagementPage() {
   // 处理项目选择
   const handleProjectSelect = (projectId: string) => {
     setSelectedProjectId(projectId);
-    // 当选择特定项目时显示任务
-    setShowTasks(projectId !== 'all');
+    // 无论选择哪个项目，都显示任务
+    setShowTasks(true);
+    console.log('项目选择更新为:', projectId);
   };
   
   // 打开添加项目对话框
@@ -716,8 +753,8 @@ export default function TaskManagementPage() {
             <span className="font-semibold text-lg text-foreground">GoTaskMind</span>
           </div>
           
-          {/* 桌面导航 */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* 桌面导航 - 放在右侧 */}
+          <nav className="hidden md:flex items-center gap-6 ml-auto">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               首页
             </Link>
@@ -818,7 +855,7 @@ export default function TaskManagementPage() {
                 <SelectContent>
                   <SelectItem value="all">所有项目</SelectItem>
                   {projects.map(project => (
-                    <SelectItem value={project.id}>
+                    <SelectItem key={project.id} value={project.id}>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
@@ -971,7 +1008,7 @@ export default function TaskManagementPage() {
                           <div className="flex items-center gap-2">
                             <label 
                               htmlFor={`task-${task.id}`}
-                              className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}
+                              className={`font-medium truncate ${task.status === 'completed' ? 'text-muted-foreground' : ''}`}
                             >
                               {task.title}
                             </label>

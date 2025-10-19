@@ -563,13 +563,16 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             <span className="font-semibold text-lg text-foreground">GoTaskMind</span>
           </div>
           
-          {/* 桌面导航 */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* 桌面导航 - 放在右侧 */}
+          <nav className="hidden md:flex justify-end items-center gap-6">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {translations.navigation.home}
             </Link>
             <Link href="/tasks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {translations.navigation.tasks}
+            </Link>
+            <Link href="/team" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              团队管理
             </Link>
             <Link href="/analytics" className="text-sm text-foreground font-medium">
               {translations.navigation.analytics}
@@ -1154,6 +1157,13 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {translations.navigation.tasks}
+            </Link>
+            <Link 
+              href="/team" 
+              className="py-2 px-4 rounded-md hover:bg-accent transition-colors text-base font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              团队管理
             </Link>
             <Link 
               href="/analytics" 

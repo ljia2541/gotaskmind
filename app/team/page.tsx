@@ -257,6 +257,22 @@ export default function TeamManagementPage() {
   
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* 桌面导航 - 放在右侧 */}
+      <div className="flex justify-end items-center gap-6 mb-6">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          首页
+        </Link>
+        <Link href="/tasks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          任务管理
+        </Link>
+        <Link href="/team" className="text-sm text-foreground font-medium">
+          团队管理
+        </Link>
+        <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          数据分析
+        </Link>
+      </div>
+      
       <h1 className="text-3xl font-bold mb-6">团队管理</h1>
       
       <Tabs defaultValue="members" className="space-y-6">

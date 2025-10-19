@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -17,31 +18,50 @@ import { useIsMobile } from '@/components/ui/use-mobile';
 export function AuthNavigation() {
   const { user, isAuthenticated, login, logout } = useAuth();
   const isMobile = useIsMobile();
+  // 使用Next.js提供的usePathname钩子获取当前路径，避免使用window对象
+  const pathname = usePathname();
 
-  // 桌面端导航
-  const DesktopNavigation = () => (
-    <nav className="hidden md:flex items-center justify-end gap-8">
-      <Link href="/" className="font-bold text-foreground hover:text-foreground transition-colors">
-        首页
-      </Link>
-      <Link href="/tasks" className="font-bold text-foreground hover:text-foreground transition-colors">
-        任务管理
-      </Link>
-      <Link href="/team" className="font-bold text-foreground hover:text-foreground transition-colors">
-        团队管理
-      </Link>
-      <Link href="/analytics" className="font-bold text-foreground hover:text-foreground transition-colors">
-        数据分析
-      </Link>
-      {isAuthenticated ? (
-        <AuthenticatedMenu user={user!} onLogout={logout} />
-      ) : (
-        <Button variant="default" size="sm" onClick={login}>
-          登录
-        </Button>
-      )}
-    </nav>
-  );
+  // 桌面端导航 - 放在右侧
+  const DesktopNavigation = () => {
+    // 获取当前路径，用于高亮当前页面
+    const currentPath = pathname;
+    
+    return (
+      <nav className="hidden md:flex items-center justify-end gap-6 ml-auto">
+        <Link 
+          href="/" 
+          className={`text-sm transition-colors ${currentPath === '/' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          首页
+        </Link>
+        <Link 
+          href="/tasks" 
+          className={`text-sm transition-colors ${currentPath === '/tasks' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          任务管理
+        </Link>
+        <Link 
+          href="/team" 
+          className={`text-sm transition-colors ${currentPath === '/team' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          团队管理
+        </Link>
+        <Link 
+          href="/analytics" 
+          className={`text-sm transition-colors ${currentPath === '/analytics' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          数据分析
+        </Link>
+        {isAuthenticated ? (
+          <AuthenticatedMenu user={user!} onLogout={logout} />
+        ) : (
+          <Button variant="default" size="sm" onClick={login}>
+            登录
+          </Button>
+        )}
+      </nav>
+    );
+  };
 
   // 移动端导航
   const MobileNavigation = () => (
