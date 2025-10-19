@@ -27,11 +27,11 @@ export function AuthNavigation() {
       <Link href="/tasks" className="font-bold text-foreground hover:text-foreground transition-colors">
         任务管理
       </Link>
+      <Link href="/team" className="font-bold text-foreground hover:text-foreground transition-colors">
+        团队管理
+      </Link>
       <Link href="/analytics" className="font-bold text-foreground hover:text-foreground transition-colors">
         数据分析
-      </Link>
-      <Link href="/features" className="font-bold text-foreground hover:text-foreground transition-colors">
-        功能
       </Link>
       {isAuthenticated ? (
         <AuthenticatedMenu user={user!} onLogout={logout} />
@@ -53,31 +53,31 @@ export function AuthNavigation() {
       </SheetTrigger>
       <SheetContent side="right" className="w-[300px]">
         <div className="flex flex-col gap-6 mt-10">
-          <Link 
-            href="/" 
-            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
-          >
-            首页
-          </Link>
-          <Link 
-            href="/tasks" 
-            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
-          >
-            任务管理
-          </Link>
-          <Link 
-            href="/analytics" 
-            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
-          >
-            数据分析
-          </Link>
-          <Link 
-            href="/features" 
-            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
-          >
-            功能
-          </Link>
-          <Separator />
+        <Link 
+          href="/" 
+          className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
+        >
+          首页
+        </Link>
+        <Link 
+          href="/tasks" 
+          className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
+        >
+          任务管理
+        </Link>
+        <Link 
+          href="/analytics" 
+          className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
+        >
+          数据分析
+        </Link>
+        <Link 
+          href="/team" 
+          className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
+        >
+          团队管理
+        </Link>
+        <Separator />
           {isAuthenticated ? (
             <>
               <div className="flex items-center gap-3 px-3">

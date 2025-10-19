@@ -36,10 +36,15 @@ export default function LandingPage() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
+    
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  /**
+   * 处理AI任务生成
+   * 调用API端点生成任务列表，并准备显示预览
+   */
   const handleGenerate = async () => {
     if (!projectPrompt.trim()) {
       setProjectPrompt(examplePrompts[currentExample]);
@@ -48,7 +53,8 @@ export default function LandingPage() {
     
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/ai', {
+      // 更新API调用路径为新创建的端点
+      const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,12 +84,11 @@ export default function LandingPage() {
       }
     } catch (error) {
       console.error('生成失败:', error);
-      alert('生成过程中出现错误，请重试。');
+      alert('生成过程中出现错误，请重试。可能需要配置DeepSeek API密钥。');
     } finally {
       setIsGenerating(false);
     }
   }
-  
   // 处理任务选择
   const handleTaskSelect = (taskId: string) => {
     setSelectedTasks(prev => {
@@ -105,21 +110,44 @@ export default function LandingPage() {
       return;
     }
     
-    // 获取现有任务
+    // 创建新项目
+    const projectTitle = projectPrompt.trim() || 'AI生成项目';
+    const newProject = {
+      id: `project-${Date.now()}`,
+      title: projectTitle,
+      description: `这是由AI根据描述"${projectTitle}"生成的项目`,
+      status: 'planning',
+      deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认14天后
+      color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // 随机颜色
+      createdAt: new Date().toISOString()
+    };
+    
+    // 将任务关联到新项目
+    const tasksWithProject = tasksToSave.map(task => ({
+      ...task,
+      projectId: newProject.id
+    }));
+    
+    // 获取现有数据
     const existingTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    // 合并任务
-    const updatedTasks = [...existingTasks, ...tasksToSave];
+    const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    
+    // 合并数据
+    const updatedTasks = [...existingTasks, ...tasksWithProject];
+    const updatedProjects = [...existingProjects, newProject];
+    
     // 保存到本地存储
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
     
     // 关闭预览对话框
     setShowTaskPreview(false);
     
     // 显示成功消息
-    alert(`成功保存 ${tasksToSave.length} 个任务！`);
+    alert(`成功创建项目"${newProject.title}"并保存 ${tasksToSave.length} 个任务！`);
     
-    // 跳转到任务页面
-    window.location.href = '/tasks';
+    // 跳转到任务页面，带上项目ID参数以便直接显示该项目
+    window.location.href = `/tasks?projectId=${newProject.id}`;
   }
   
   // 选择/取消选择所有任务

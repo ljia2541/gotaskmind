@@ -1,15 +1,60 @@
+// 任务状态类型
+export type TaskStatus = 'todo' | 'in-progress' | 'completed';
+
+// 任务分类类型
+export type TaskCategory = 'work' | 'personal' | 'learning' | 'other';
+
+// 任务优先级类型
+export type TaskPriority = 'low' | 'medium' | 'high';
+
 // 任务类型定义
-export type Task = {
+export interface Task {
   id: string;
   title: string;
-  description: string;
-  status: 'todo' | 'in-progress' | 'completed';
-  category: 'work' | 'personal' | 'learning' | 'other';
-  priority: 'low' | 'medium' | 'high';
-  dueDate: string;
+  description?: string;
+  status: TaskStatus;
+  category: TaskCategory;
+  priority: TaskPriority;
+  dueDate?: string;
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
+  projectId?: string;
+  assigneeId?: string;
+  assignedAt?: string;
+  comments?: TaskComment[];
+}
+
+// 任务评论类型定义
+export interface TaskComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorPicture?: string;
+  content: string;
+  createdAt: string;
+}
+
+// 任务评论类型
+export type TaskComment = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorPicture?: string;
+  content: string;
+  createdAt: string;
+  attachments?: CommentAttachment[];
 };
+
+// 评论附件类型
+export type CommentAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  size: number;
+};
+
 
 // 分类标签配置
 export const categoryLabels = {

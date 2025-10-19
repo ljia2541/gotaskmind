@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { BarChart3, Sparkles, RefreshCw, ChevronDown, Calendar, Menu } from 'lucide-react';
+import { BarChart3, Sparkles, RefreshCw, ChevronDown, Calendar, Menu, AlertCircle } from 'lucide-react';
 import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 // 导入语言服务和翻译对象
 import { LanguageService, analyticsTranslations } from '@/app/lib/language-service';
 
@@ -22,44 +23,134 @@ export default function AnalyticsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState({
     tasks: true,
+    analytics: true,
     aiInsights: false
   });
   const [aiInsights, setAiInsights] = useState<string>('');
   const [showAllTasks, setShowAllTasks] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [authenticated, setAuthenticated] = useState(false);
   // 语言状态
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
   const [translations, setTranslations] = useState(analyticsTranslations.zh);
   
-  // 从本地存储加载任务数据
+  // 初始化加载数据
   useEffect(() => {
-    loadTasks();
+    checkAuthentication();
+    loadUserLanguage();
   }, []);
+
+  // 加载用户语言偏好
+  const loadUserLanguage = () => {
+    const savedLanguage = LanguageService.getUserLanguage();
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+      setTranslations(analyticsTranslations[savedLanguage]);
+    }
+  };
   
-  // 加载任务数据
-  const loadTasks = () => {
-    setIsLoading(prev => ({ ...prev, tasks: true }));
+  // 检查用户认证状态
+  const checkAuthentication = async () => {
     try {
-      // 从本地存储获取任务数据
-      const savedTasks = localStorage.getItem('tasks');
-      if (savedTasks) {
-        const parsedTasks = JSON.parse(savedTasks) as Task[];
-        setTasks(parsedTasks);
-        
-        // 检测任务语言并设置界面语言
-        const detectedLanguage = LanguageService.detectTasksLanguage(parsedTasks);
-        setLanguage(detectedLanguage);
-        setTranslations(analyticsTranslations[detectedLanguage]);
-        LanguageService.saveUserLanguage(detectedLanguage);
-        
-        // 获取AI洞察，直接传递检测到的语言而不是依赖状态更新
-        fetchAiInsightsWithLanguage(parsedTasks, detectedLanguage);
+      // 检查是否有会话cookie
+      const response = await fetch('/api/auth/session', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        setAuthenticated(true);
+        // 认证成功后加载数据
+        await loadTasks();
+        await loadAnalyticsData();
+      } else {
+        setAuthenticated(false);
+        setError(translations.errors.notAuthenticated);
       }
     } catch (error) {
+      console.error('认证检查失败:', error);
+      setError(translations.errors.authCheckFailed);
+      setAuthenticated(false);
+    }
+  };
+  
+  // 从API加载任务数据
+  const loadTasks = async () => {
+    setIsLoading(prev => ({ ...prev, tasks: true }));
+    setError('');
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error(translations.errors.unauthorized);
+        }
+        throw new Error(translations.errors.loadTasksFailed);
+      }
+      
+      const tasksData = await response.json();
+      // 确保tasksData是数组类型
+      const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
+      setTasks(safeTasksData);
+      
+      // 检测任务语言并设置界面语言 - 使用安全的tasks数组
+      const detectedLanguage = LanguageService.detectTasksLanguage(safeTasksData);
+      setLanguage(detectedLanguage);
+      setTranslations(analyticsTranslations[detectedLanguage]);
+      LanguageService.saveUserLanguage(detectedLanguage);
+      
+      // 获取AI洞察，直接传递检测到的语言而不是依赖状态更新
+      fetchAiInsightsWithLanguage(safeTasksData, detectedLanguage);
+    } catch (error: any) {
       console.error('加载任务数据失败:', error);
+      setError(error.message || translations.errors.loadTasksError);
     } finally {
       setIsLoading(prev => ({ ...prev, tasks: false }));
     }
+  };
+
+  // 从API加载分析数据
+  const loadAnalyticsData = async () => {
+    setIsLoading(prev => ({ ...prev, analytics: true }));
+    try {
+      // 设置超时以避免长时间挂起
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+      
+      const response = await fetch('/api/analytics', {
+        method: 'GET',
+        credentials: 'include',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error(translations.errors.unauthorized);
+        }
+        throw new Error(translations.errors.loadAnalyticsFailed);
+      }
+      
+      const analyticsData = await response.json();
+      console.log('分析数据已加载:', analyticsData);
+      // 分析数据将直接用于图表展示
+    } catch (error: any) {
+      console.error('加载分析数据失败:', error);
+      // 即使分析数据加载失败，也会使用任务数据计算分析结果
+      // 不显示错误消息，因为这不会影响页面的基本功能
+    } finally {
+      setIsLoading(prev => ({ ...prev, analytics: false }));
+    }
+  };
+
+  // 刷新所有数据
+  const refreshAllData = async () => {
+    await Promise.all([loadTasks(), loadAnalyticsData()]);
   };
   
   // 调用AI分析API获取真实洞察（带语言参数）
@@ -68,32 +159,41 @@ export default function AnalyticsPage() {
       // 设置加载状态
       setIsLoading(prev => ({ ...prev, aiInsights: true }));
       
-      // 直接使用模拟数据，避免API调用失败问题
-      // 如果需要实际API调用，可以在未来版本中取消注释下面的代码
-      /*
-      // 调用API
+      // 调用AI分析API
       const response = await fetch('/api/analytics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ tasks: tasksData }),
+        credentials: 'include',
+        body: JSON.stringify({ 
+          tasks: tasksData,
+          language: currentLanguage 
+        }),
       });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error(translations.errors.unauthorized);
+        }
+        throw new Error(translations.errors.aiAnalysisFailed);
+      }
       
       const data = await response.json();
       
-      if (data.success) {
+      if (data.analysis || data.summary) {
         // 使用AI生成的分析结果
-        setAiInsights(data.analysis);
+        const aiContent = data.summary || data.analysis;
+        setAiInsights(aiContent);
+        
+        // 如果是模拟数据，记录日志
+        if (data.isMockData) {
+          console.log('使用模拟AI分析数据');
+        }
       } else {
-        // 如果API调用失败，使用备份的模拟分析
-        console.error('AI分析API调用失败:', data.error);
+        // 如果API返回的数据不完整，使用备份的模拟分析
         generateBackupInsights(tasksData, currentLanguage);
       }
-      */
-      
-      // 使用模拟数据确保页面正常显示，并传递当前语言
-      generateBackupInsights(tasksData, currentLanguage);
     } catch (error) {
       // 捕获网络错误等异常
       console.error('获取AI洞察失败:', error);
@@ -477,20 +577,30 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             <Button
              variant="ghost"
              size="sm"
-             onClick={loadTasks}
-             disabled={isLoading.tasks}
+             onClick={refreshAllData}
+             disabled={isLoading.tasks || isLoading.analytics}
              className="ml-2 flex items-center gap-2"
            >
-             {isLoading.tasks ? (
+             {(isLoading.tasks || isLoading.analytics) ? (
                <RefreshCw className="w-4 h-4 animate-spin" />
              ) : (
                <RefreshCw className="w-4 h-4" />
              )}
              {translations.navigation.refresh}
            </Button>
-            <Button variant="outline" size="sm">
-              {translations.navigation.login}
-            </Button>
+            {authenticated ? (
+              <Button variant="outline" size="sm" onClick={() => {
+                // 登出逻辑
+                document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+                window.location.href = '/';
+              }}>
+                {translations.navigation.logout}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm">
+                {translations.navigation.login}
+              </Button>
+            )}
           </nav>
           
           {/* 移动端导航触发器 */}
@@ -498,8 +608,8 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             <Button
               variant="ghost"
               size="sm"
-              onClick={loadTasks}
-              disabled={isLoading.tasks}
+              onClick={refreshAllData}
+              disabled={isLoading.tasks || isLoading.analytics}
               className="md:hidden flex items-center gap-2"
             >
               {isLoading.tasks ? (
@@ -516,8 +626,39 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* 错误提示 */}
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-4 rounded-lg flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">{error}</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto h-8 px-2" 
+              onClick={() => setError('')}
+            >
+              关闭
+            </Button>
+          </div>
+        )}
+        
+        {/* 未认证提示 */}
+        {!authenticated && !isLoading.tasks && !isLoading.analytics && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">{translations.errors.authRequired}</h3>
+              <p className="text-muted-foreground mb-6">{translations.errors.loginToViewAnalytics}</p>
+              <Button>
+                <Link href="/api/auth/google">{translations.navigation.loginWithGoogle}</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* 主要内容 */}
-        <div className="space-y-8">
+        {authenticated && (
+          <div className="space-y-8">
           {/* 摘要卡片 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
@@ -993,6 +1134,7 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             </CardContent>
            </Card>
         </div>
+        )}
       </main>
       
       {/* 移动端导航对话框 */}
@@ -1021,7 +1163,20 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
               {translations.navigation.analytics}
             </Link>
             <div className="border-t border-border pt-4 mt-4">
-              <Button className="w-full">{translations.navigation.login}</Button>
+              {authenticated ? (
+                <Button 
+                  className="w-full" 
+                  onClick={() => {
+                    // 登出逻辑
+                    document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+                    window.location.href = '/';
+                  }}
+                >
+                  {translations.navigation.logout}
+                </Button>
+              ) : (
+                <Button className="w-full">{translations.navigation.login}</Button>
+              )}
             </div>
           </div>
         </DialogContent>

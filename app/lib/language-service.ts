@@ -81,7 +81,9 @@ export const analyticsTranslations = {
       tasks: '任务管理',
       analytics: '数据分析',
       refresh: '刷新',
-      login: '登录'
+      login: '登录',
+      logout: '登出',
+      loginWithGoogle: '使用Google登录'
     },
     
     // 摘要卡片
@@ -137,7 +139,8 @@ export const analyticsTranslations = {
     statusLabels: {
       todo: '待办',
       'in-progress': '进行中',
-      completed: '已完成'
+      completed: '已完成',
+      done: '完成'
     },
     
     // 优先级标签
@@ -214,6 +217,17 @@ export const analyticsTranslations = {
       suggestion1: '考虑对剩余任务进行重新排序，优先处理高优先级且即将到期的任务',
       suggestion2: '对于工作量较大的项目，可以进一步拆分任务以提高完成效率',
       suggestion3: '定期回顾已完成任务，总结经验教训以优化未来工作流程'
+    },
+    errors: {
+      notAuthenticated: '您尚未登录',
+      authCheckFailed: '认证检查失败，请重试',
+      unauthorized: '未授权访问，请重新登录',
+      loadTasksFailed: '加载任务数据失败',
+      loadTasksError: '加载任务时发生错误',
+      loadAnalyticsFailed: '加载分析数据失败',
+      aiAnalysisFailed: 'AI分析失败',
+      authRequired: '需要登录',
+      loginToViewAnalytics: '请登录后查看您的任务分析数据'
     }
   },
   
@@ -225,7 +239,9 @@ export const analyticsTranslations = {
       tasks: 'Tasks',
       analytics: 'Analytics',
       refresh: 'Refresh',
-      login: 'Login'
+      login: 'Login',
+      logout: 'Logout',
+      loginWithGoogle: 'Login with Google'
     },
     
     // 摘要卡片
@@ -281,7 +297,8 @@ export const analyticsTranslations = {
     statusLabels: {
       todo: 'To Do',
       'in-progress': 'In Progress',
-      completed: 'Completed'
+      completed: 'Completed',
+      done: 'Done'
     },
     
     // 优先级标签
@@ -358,6 +375,17 @@ export const analyticsTranslations = {
       suggestion1: 'Consider reordering remaining tasks to prioritize high-priority and upcoming due tasks',
       suggestion2: 'For larger projects, further break down tasks to improve completion efficiency',
       suggestion3: 'Regularly review completed tasks to summarize experiences and optimize future workflows'
+    },
+    errors: {
+      notAuthenticated: 'You are not logged in',
+      authCheckFailed: 'Authentication check failed, please try again',
+      unauthorized: 'Unauthorized access, please login again',
+      loadTasksFailed: 'Failed to load tasks data',
+      loadTasksError: 'Error loading tasks',
+      loadAnalyticsFailed: 'Failed to load analytics data',
+      aiAnalysisFailed: 'AI analysis failed',
+      authRequired: 'Login Required',
+      loginToViewAnalytics: 'Please login to view your task analytics data'
     }
   }
 };
