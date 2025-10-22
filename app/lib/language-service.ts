@@ -56,12 +56,17 @@ export class LanguageService {
 
   /**
    * 获取用户保存的语言偏好
+   * 注意：在客户端组件中使用，服务端组件需要使用默认值
    * @returns 'zh' | 'en' | null 语言代码或null（如果没有保存）
    */
   static getUserLanguage(): 'zh' | 'en' | null {
     try {
-      const saved = localStorage.getItem('userLanguage');
-      return saved === 'zh' || saved === 'en' ? saved : null;
+      // 检查是否在浏览器环境中
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('userLanguage');
+        return saved === 'zh' || saved === 'en' ? saved : null;
+      }
+      return null;
     } catch (error) {
       console.error('获取语言偏好失败:', error);
       return null;
@@ -79,6 +84,7 @@ export const analyticsTranslations = {
     navigation: {
       home: '首页',
       tasks: '任务管理',
+      team: '团队管理',
       analytics: '数据分析',
       refresh: '刷新',
       login: '登录',
@@ -237,6 +243,7 @@ export const analyticsTranslations = {
     navigation: {
       home: 'Home',
       tasks: 'Tasks',
+      team: 'Team',
       analytics: 'Analytics',
       refresh: 'Refresh',
       login: 'Login',

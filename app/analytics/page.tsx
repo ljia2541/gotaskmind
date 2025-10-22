@@ -41,6 +41,35 @@ export default function AnalyticsPage() {
     loadUserLanguage();
   }, []);
 
+  // 监听localStorage变化，实现数据同步
+  useEffect(() => {
+    // 确保在客户端环境中运行
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tasks') {
+        console.log('检测到任务数据变化，重新加载数据分析');
+        loadTasks();
+      }
+    };
+
+    // 监听storage事件
+    window.addEventListener('storage', handleStorageChange);
+
+    // 同时监听自定义事件，用于同一页面的数据同步
+    const handleTasksUpdate = () => {
+      console.log('检测到任务更新事件，重新加载数据分析');
+      loadTasks();
+    };
+
+    window.addEventListener('tasksUpdated', handleTasksUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('tasksUpdated', handleTasksUpdate);
+    };
+  }, []); // 移除tasks依赖，避免无限循环
+
   // 加载用户语言偏好
   const loadUserLanguage = () => {
     const savedLanguage = LanguageService.getUserLanguage();
@@ -133,36 +162,52 @@ export default function AnalyticsPage() {
     }
   };
   
-  // 从API加载任务数据
+  // 从localStorage加载任务数据
   const loadTasks = async () => {
     setIsLoading(prev => ({ ...prev, tasks: true }));
     setError('');
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(translations.errors.unauthorized);
-        }
-        throw new Error(translations.errors.loadTasksFailed);
+      // 确保在客户端环境中运行
+      if (typeof window === 'undefined') {
+        console.log('服务端环境，跳过任务加载');
+        setTasks([]);
+        setIsLoading(prev => ({ ...prev, tasks: false }));
+        return;
       }
-      
-      const tasksData = await response.json();
-      // 确保tasksData是数组类型
-      const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
-      setTasks(safeTasksData);
-      
-      // 检测任务语言并设置界面语言 - 使用安全的tasks数组
-      const detectedLanguage = LanguageService.detectTasksLanguage(safeTasksData);
+
+      // 从localStorage读取任务数据
+      const savedTasks = localStorage.getItem('tasks');
+      let tasksData: Task[] = [];
+
+      if (savedTasks) {
+        try {
+          const parsedTasks = JSON.parse(savedTasks);
+          if (Array.isArray(parsedTasks)) {
+            tasksData = parsedTasks;
+            console.log('从localStorage加载任务数据成功，共', tasksData.length, '个任务');
+          } else {
+            console.log('localStorage中的任务数据格式错误，使用空数组');
+            tasksData = [];
+          }
+        } catch (error) {
+          console.error('解析任务数据失败:', error);
+          tasksData = [];
+        }
+      } else {
+        console.log('localStorage中没有任务数据，使用空数组');
+        tasksData = [];
+      }
+
+      setTasks(tasksData);
+
+      // 检测任务语言并设置界面语言
+      const detectedLanguage = LanguageService.detectTasksLanguage(tasksData);
       setLanguage(detectedLanguage);
       setTranslations(analyticsTranslations[detectedLanguage]);
       LanguageService.saveUserLanguage(detectedLanguage);
-      
-      // 获取AI洞察，直接传递检测到的语言而不是依赖状态更新
-      fetchAiInsightsWithLanguage(safeTasksData, detectedLanguage);
+
+      // 获取AI洞察
+      fetchAiInsightsWithLanguage(tasksData, detectedLanguage);
     } catch (error: any) {
       console.error('加载任务数据失败:', error);
       setError(error.message || translations.errors.loadTasksError);
@@ -172,35 +217,58 @@ export default function AnalyticsPage() {
   };
 
   // 从API加载分析数据
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = async (retryCount = 0) => {
     setIsLoading(prev => ({ ...prev, analytics: true }));
     try {
       // 设置超时以避免长时间挂起
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-      
+      const timeoutId = setTimeout(() => {
+        controller.abort(new Error('Request timeout after 8 seconds'));
+      }, 8000); // 8秒超时
+
       const response = await fetch('/api/analytics', {
         method: 'GET',
         credentials: 'include',
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         if (response.status === 401) {
+          // 认证错误时尝试重新登录并重试
+          if (retryCount < 1) {
+            console.log('认证失败，尝试重新登录...');
+            await attemptMockLogin();
+            return loadAnalyticsData(retryCount + 1);
+          }
           throw new Error(translations.errors.unauthorized);
         }
+        
+        // 服务器错误且重试次数小于2时进行重试
+        if (response.status >= 500 && retryCount < 2) {
+          console.warn(`服务器错误(${response.status})，${retryCount + 1}秒后重试...`);
+          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+          return loadAnalyticsData(retryCount + 1);
+        }
+        
         throw new Error(translations.errors.loadAnalyticsFailed);
       }
-      
+
       const analyticsData = await response.json();
       console.log('分析数据已加载:', analyticsData);
       // 分析数据将直接用于图表展示
     } catch (error: any) {
-      console.error('加载分析数据失败:', error);
-      // 即使分析数据加载失败，也会使用任务数据计算分析结果
-      // 不显示错误消息，因为这不会影响页面的基本功能
+      // 区分超时错误和其他错误
+      if (error.name === 'AbortError') {
+        console.warn('加载分析数据超时，使用本地任务数据作为替代');
+      } else if (error.message === translations.errors.unauthorized) {
+        console.error('未授权访问分析API');
+      } else {
+        console.error('加载分析数据失败:', error.message);
+      }
+      // 即使分析数据加载失败，页面仍会使用本地任务数据计算分析结果
+      // 这确保了即使API不可用，核心功能仍能正常工作
     } finally {
       setIsLoading(prev => ({ ...prev, analytics: false }));
     }
@@ -212,10 +280,24 @@ export default function AnalyticsPage() {
   };
   
   // 调用AI分析API获取真实洞察（带语言参数）
-  const fetchAiInsightsWithLanguage = async (tasksData: Task[], currentLanguage: 'zh' | 'en') => {
+  const fetchAiInsightsWithLanguage = async (tasksData: Task[], currentLanguage: 'zh' | 'en', retryCount = 0) => {
     try {
       // 设置加载状态
       setIsLoading(prev => ({ ...prev, aiInsights: true }));
+      
+      // 任务数量少于2个时，不调用AI分析，直接使用本地生成的简单洞察
+      if (tasksData.length < 2) {
+        console.log('任务数量太少，使用本地生成的简单洞察');
+        const simpleInsight = currentLanguage === 'zh' 
+          ? `您目前有 ${tasksData.length} 个任务。添加更多任务以获得更全面的AI分析。`
+          : `You currently have ${tasksData.length} tasks. Add more tasks for comprehensive AI analysis.`;
+        setAiInsights(simpleInsight);
+        return;
+      }
+      
+      // 设置超时控制
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12秒超时
       
       // 调用AI分析API
       const response = await fetch('/api/analytics', {
@@ -228,12 +310,36 @@ export default function AnalyticsPage() {
           tasks: tasksData,
           language: currentLanguage 
         }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(translations.errors.unauthorized);
+        // 认证错误时尝试重新登录并重试
+        if (response.status === 401 && retryCount < 1) {
+          console.log('AI洞察认证失败，尝试重新登录...');
+          await attemptMockLogin();
+          return fetchAiInsightsWithLanguage(tasksData, currentLanguage, retryCount + 1);
         }
+        
+        // 服务器错误时的重试逻辑
+        if (response.status >= 500 && retryCount < 2) {
+          console.warn(`AI分析服务器错误(${response.status})，${retryCount + 1}秒后重试...`);
+          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+          return fetchAiInsightsWithLanguage(tasksData, currentLanguage, retryCount + 1);
+        }
+        
+        // 如果是400错误，直接使用本地生成的洞察
+        if (response.status === 400) {
+          console.warn('AI分析API参数错误，使用本地生成的洞察');
+          const errorInsight = currentLanguage === 'zh' 
+            ? `当前无法获取AI洞察，任务数据可能格式不正确。已完成任务: ${tasksData.filter(t => t.status === 'completed' || t.status === 'done').length}/${tasksData.length}`
+            : `Unable to get AI insights, task data may be in incorrect format. Completed tasks: ${tasksData.filter(t => t.status === 'completed' || t.status === 'done').length}/${tasksData.length}`;
+          setAiInsights(errorInsight);
+          return;
+        }
+        
         throw new Error(translations.errors.aiAnalysisFailed);
       }
       
@@ -630,7 +736,7 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
               {translations.navigation.tasks}
             </Link>
             <Link href="/team" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              团队管理
+              {translations.navigation.team}
             </Link>
             <Link href="/analytics" className="text-sm text-foreground font-medium">
               {translations.navigation.analytics}
@@ -1010,7 +1116,9 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
                           outerRadius={80}
                           paddingAngle={2}
                           dataKey="value"
-                          label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          // 完全不显示外部标签，避免任何重叠问题
+                          label={false}
+                          // 通过点击或悬停查看详细信息
                         >
                           {getTaskCreationTimeDistribution().map((entry, index) => (
                             <Cell
@@ -1024,6 +1132,19 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
                         />
                       </RechartsPieChart>
                     </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    {getTaskCreationTimeDistribution().map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5] }}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {item.label}: {item.value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -1063,20 +1184,15 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="space-y-2 mt-4">
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
                   {getCategoryDistribution().map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: getCategoryColor(item.name) }}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {item.label}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-foreground">
-                        {item.value}
+                    <div key={index} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: getCategoryColor(item.name) }}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {item.label}: {item.value}
                       </span>
                     </div>
                   ))}

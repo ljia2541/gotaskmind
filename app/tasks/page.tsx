@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,57 +11,56 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Menu, PlusCircle, MoreHorizontal, Home, CheckSquare, PlusSquare, BarChart2, Edit, Trash2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Search, Menu, PlusCircle, MoreHorizontal, CheckSquare, PlusSquare, Home, Users, BarChart2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/logo';
+import { LanguageService, analyticsTranslations } from '@/app/lib/language-service';
+import { toast } from 'sonner';
 
 // 导入任务和项目相关类型和配置
-import { Task, categoryLabels, priorityLabels, statusLabels, TaskComment } from '@/types/task';
+import { Task, categoryLabels, priorityLabels, statusLabels } from '@/types/task';
 import { Project, projectStatusLabels } from '@/types/project';
 import { TeamMember } from '@/types/team';
 import { useAuth } from '@/app/hooks/use-auth';
 
 export default function TaskManagementPage() {
+  // 认证状态
   const { user, isAuthenticated } = useAuth();
   
-  // 状态管理
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // 使用固定语言避免hydration问题
+  const [isClient, setIsClient] = useState(false);
+
+  // 确保只在客户端进行语言检测
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // 获取对应的翻译文本
+  const translations = isClient ? analyticsTranslations[LanguageService.getUserLanguage() || 'zh'] || analyticsTranslations['zh'] : analyticsTranslations['zh'];
   
-  // 项目状态管理
+  // 状态管理 - 基础状态
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // 项目相关状态
   const [projects, setProjects] = useState<Project[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  // 默认选择'all'，在useEffect中获取URL参数
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
-  
-  // 只在客户端运行时获取URL参数
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('projectId');
-    if (projectId) {
-      setSelectedProjectId(projectId);
-    }
-  }, []);
-  // 控制任务显示状态 - 只有选择了特定项目才显示任务
   const [showTasks, setShowTasks] = useState(false);
   
-  // 任务状态管理
+  // 任务相关状态
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState<'createdAt' | 'dueDate'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  // 任务编辑状态
+  // 对话框状态
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  
-  // 任务详情状态
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  
-  // 项目编辑状态
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   
@@ -77,7 +76,6 @@ export default function TaskManagementPage() {
     assigneeId: '' as string | undefined,
   });
   
-  // 项目表单状态
   const [projectFormData, setProjectFormData] = useState({
     title: '',
     description: '',
@@ -86,455 +84,254 @@ export default function TaskManagementPage() {
     color: '#64748b',
   });
 
+  // 获取默认项目数据
+  function getDefaultProjects(): Project[] {
+    // 使用固定日期避免hydration问题
+    const baseDate = new Date('2024-01-01T00:00:00.000Z');
+    return [
+      {
+        id: 'project-1',
+        title: '个人任务',
+        description: '管理个人日常任务',
+        status: 'active',
+        deadline: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: baseDate.toISOString(),
+        color: '#3b82f6',
+      },
+      {
+        id: 'project-2',
+        title: '工作项目',
+        description: '公司相关任务和项目',
+        status: 'active',
+        deadline: new Date(baseDate.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: baseDate.toISOString(),
+        color: '#10b981',
+      },
+    ];
+  }
 
+  // 获取默认团队成员数据
+  function getDefaultTeamMembers(): TeamMember[] {
+    return [
+      {
+        id: 'user-1',
+        name: '张三',
+        avatar: '/placeholder-user.jpg',
+        role: '成员',
+        status: 'active',
+      },
+      {
+        id: 'user-2',
+        name: '李四',
+        avatar: '/placeholder-user.jpg',
+        role: '管理员',
+        status: 'active',
+      },
+    ];
+  }
 
-  // 初始化项目和团队成员数据
+  // 获取默认任务数据
+  function getDefaultTasks(): Task[] {
+    // 使用固定日期避免hydration问题
+    const baseDate = new Date('2024-01-01T00:00:00.000Z');
+    const tomorrow = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+    const nextWeek = new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    return [
+      {
+        id: 'task-1',
+        title: '完成项目提案',
+        description: '准备下周的项目提案文档',
+        status: 'todo',
+        category: 'work',
+        priority: 'high',
+        dueDate: tomorrow.toISOString(),
+        createdAt: baseDate.toISOString(),
+        projectId: 'project-2',
+        assigneeId: 'user-1',
+        comments: [],
+      },
+      {
+        id: 'task-2',
+        title: '健身锻炼',
+        description: '去健身房进行1小时有氧运动',
+        status: 'in-progress',
+        category: 'personal',
+        priority: 'medium',
+        dueDate: baseDate.toISOString(),
+        createdAt: baseDate.toISOString(),
+        projectId: 'project-1',
+        assigneeId: undefined,
+        comments: [],
+      },
+      {
+        id: 'task-3',
+        title: '学习React',
+        description: '完成React官方文档的基础教程',
+        status: 'todo',
+        category: 'learning',
+        priority: 'medium',
+        dueDate: nextWeek.toISOString(),
+        createdAt: baseDate.toISOString(),
+        projectId: 'project-1',
+        assigneeId: undefined,
+        comments: [],
+      },
+    ];
+  }
+
+  // 统一的数据初始化 - 包括项目、团队成员和任务
   useEffect(() => {
     // 确保在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      console.log('在客户端环境中初始化数据');
+    if (typeof window !== 'undefined' && !isInitialized) {
+      // 获取URL参数
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectIdFromUrl = urlParams.get('projectId');
 
-      // 从本地存储加载项目
+      // 1. 加载项目数据 - 优先使用本地存储的数据
+      let finalProjects: Project[] = [];
       const savedProjects = localStorage.getItem('projects');
       if (savedProjects) {
         try {
           const parsedProjects = JSON.parse(savedProjects);
           if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-            setProjects(parsedProjects);
-            console.log('从本地存储加载项目数据成功，共', parsedProjects.length, '个项目');
+            finalProjects = parsedProjects;
           } else {
-            console.log('本地存储中的项目数据为空，初始化空项目列表');
-            initializeEmptyProjects();
+            finalProjects = getDefaultProjects();
           }
-        } catch (error) {
-          console.error('解析项目数据失败:', error);
-          initializeEmptyProjects();
+        } catch {
+          finalProjects = getDefaultProjects();
         }
       } else {
-        console.log('本地存储中没有项目数据，初始化空项目列表');
-        initializeEmptyProjects();
+        finalProjects = getDefaultProjects();
       }
+      setProjects(finalProjects);
 
-      // 从本地存储加载团队成员
-      const savedMembers = localStorage.getItem('teamMembers');
-      if (savedMembers) {
+      // 2. 加载团队成员数据 - 优先使用本地存储的数据
+      let finalTeamMembers: TeamMember[] = [];
+      const savedTeamMembers = localStorage.getItem('teamMembers');
+      if (savedTeamMembers) {
         try {
-          const parsedMembers = JSON.parse(savedMembers);
-          if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-            setTeamMembers(parsedMembers);
-            console.log('从本地存储加载团队成员数据成功，共', parsedMembers.length, '个成员');
+          const parsedTeamMembers = JSON.parse(savedTeamMembers);
+          if (Array.isArray(parsedTeamMembers) && parsedTeamMembers.length > 0) {
+            finalTeamMembers = parsedTeamMembers;
           } else {
-            console.log('本地存储中的团队成员数据为空，初始化模拟数据');
-            initializeMockMembers();
+            finalTeamMembers = getDefaultTeamMembers();
           }
-        } catch (error) {
-          console.error('解析团队成员数据失败:', error);
-          initializeMockMembers();
+        } catch {
+          finalTeamMembers = getDefaultTeamMembers();
         }
       } else {
-        console.log('本地存储中没有团队成员数据，初始化模拟数据');
-        initializeMockMembers();
+        finalTeamMembers = getDefaultTeamMembers();
       }
-    } else {
-      // 服务器端渲染时的默认值
-      setProjects([]);
-      setTeamMembers([]);
-      console.log('在服务器端渲染，使用默认空数据');
-    }
-  }, []); // 移除user依赖，确保数据尽早初始化
+      setTeamMembers(finalTeamMembers);
 
-  // 初始化项目数据（默认为空，等待用户创建）
-  const initializeEmptyProjects = () => {
-    console.log('初始化空的项目列表');
-    setProjects([]);
-
-    try {
-      localStorage.setItem('projects', JSON.stringify([]));
-      console.log('空项目列表已保存到本地存储');
-    } catch (error) {
-      console.error('保存空项目列表到本地存储失败:', error);
-    }
-  };
-
-  // 初始化模拟团队成员的函数
-  const initializeMockMembers = () => {
-    const mockMembers: TeamMember[] = [
-      {
-        id: '1',
-        email: user?.email || 'admin@example.com',
-        name: user?.name || '管理员',
-        picture: user?.picture,
-        role: 'admin',
-        status: 'active',
-        joinedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        email: 'member1@example.com',
-        name: '张三',
-        role: 'member',
-        status: 'active',
-        joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        email: 'member2@example.com',
-        name: '李四',
-        role: 'member',
-        status: 'active',
-        joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-
-    console.log('设置模拟团队成员数据:', mockMembers);
-    setTeamMembers(mockMembers);
-
-    try {
-      localStorage.setItem('teamMembers', JSON.stringify(mockMembers));
-      console.log('模拟团队成员数据已保存到本地存储');
-    } catch (error) {
-      console.error('保存模拟团队成员数据到本地存储失败:', error);
-    }
-  };
-  
-  // 初始化模拟任务数据
-  useEffect(() => {
-    // 确保在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      console.log('开始初始化任务数据...');
-
-      // 从本地存储加载任务，如果没有则使用空任务列表
-      try {
-        const savedTasks = localStorage.getItem('tasks');
-        console.log('从本地存储读取的任务数据:', savedTasks);
-
-        if (savedTasks && savedTasks.trim() !== '') {
+      // 3. 加载任务数据 - 优先使用本地存储的数据
+      let finalTasks: Task[] = [];
+      const savedTasks = localStorage.getItem('tasks');
+      if (savedTasks) {
+        try {
           const parsedTasks = JSON.parse(savedTasks);
-          console.log('解析后的任务数据:', parsedTasks);
-
           if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
-            setTasks(parsedTasks);
-            console.log('从本地存储加载任务数据成功，共', parsedTasks.length, '个任务');
+            finalTasks = parsedTasks;
           } else {
-            console.log('本地存储中的任务数据为空或格式错误，初始化空任务列表');
-            initializeEmptyTasks();
+            finalTasks = getDefaultTasks();
           }
-        } else {
-          console.log('本地存储中没有任务数据，初始化空任务列表');
-          initializeEmptyTasks();
+        } catch {
+          finalTasks = getDefaultTasks();
         }
-      } catch (error) {
-        console.error('加载任务数据时出错:', error);
-        console.log('使用空任务列表作为备用');
-        initializeEmptyTasks();
+      } else {
+        finalTasks = getDefaultTasks();
       }
-    }
-  }, []);
+      setTasks(finalTasks);
 
-  // 初始化空任务列表的函数
-  const initializeEmptyTasks = () => {
-    console.log('初始化空的任务列表');
-    setTasks([]);
-
-    try {
-      localStorage.setItem('tasks', JSON.stringify([]));
-      console.log('空任务列表已保存到本地存储');
-    } catch (error) {
-      console.error('保存空任务列表到本地存储失败:', error);
-    }
-  };
-
-  // 监听任务变化，自动保存到localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && tasks.length > 0) {
-      try {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        console.log('任务状态变化后自动保存到localStorage，共', tasks.length, '个任务');
-      } catch (error) {
-        console.error('自动保存任务到localStorage失败:', error);
-      }
-    }
-  }, [tasks]);
-
-  // 监听URL参数变化
-  useEffect(() => {
-    // 在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      const handleUrlChange = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const projectId = urlParams.get('projectId');
-
-        if (projectId && projectId !== selectedProjectId) {
-          setSelectedProjectId(projectId);
-          setShowTasks(true);
-        } else if (!projectId) {
-          // 没有URL参数时，不显示任务，需要用户先选择项目
-          setSelectedProjectId('all');
-          setShowTasks(false);
+      // 4. 处理URL参数 - 项目筛选
+      if (projectIdFromUrl) {
+        setSelectedProjectId(projectIdFromUrl);
+        // 检查项目是否存在，如果存在则设置表单的projectId
+        const projectExists = finalProjects.some(p => p.id === projectIdFromUrl);
+        if (projectExists) {
+          setFormData(prev => ({ ...prev, projectId: projectIdFromUrl }));
         }
       }
 
-      // 初始化时调用一次，处理初始URL参数
-      handleUrlChange();
+      // 保存到本地存储
+      localStorage.setItem('projects', JSON.stringify(finalProjects));
+      localStorage.setItem('teamMembers', JSON.stringify(finalTeamMembers));
+      localStorage.setItem('tasks', JSON.stringify(finalTasks));
 
-      // 监听浏览器前进后退按钮事件
-      window.addEventListener('popstate', handleUrlChange);
-
-      // 清理函数
-      return () => {
-        window.removeEventListener('popstate', handleUrlChange);
-      };
-    }
-  }, [selectedProjectId]);
-  
-  // 保存项目到本地存储
-  useEffect(() => {
-    // 确保在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      console.log('项目状态更新，保存到本地存储:', projects);
-      // 无论项目数组是否为空，都保存到本地存储
-      try {
-        const projectsJson = JSON.stringify(projects);
-        localStorage.setItem('projects', projectsJson);
-        console.log('项目保存成功，数据大小:', projectsJson.length, '字节');
-      } catch (error) {
-        console.error('保存项目到本地存储失败:', error);
-      }
-    }
-  }, [projects]);
-  
-  // 保存任务到本地存储
-  useEffect(() => {
-    // 确保在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      console.log('任务状态更新，保存到本地存储:', tasks);
-      // 无论任务数组是否为空，都保存到本地存储
-      try {
-        const tasksJson = JSON.stringify(tasks);
-        localStorage.setItem('tasks', tasksJson);
-        console.log('任务保存成功，数据大小:', tasksJson.length, '字节');
-      } catch (error) {
-        console.error('保存任务到本地存储失败:', error);
-      }
-    }
-  }, [tasks]);
-  
-  // 保存团队成员到本地存储
-  useEffect(() => {
-    // 确保在客户端环境中运行
-    if (typeof window !== 'undefined') {
-      console.log('团队成员状态更新，保存到本地存储:', teamMembers);
-      // 无论团队成员数组是否为空，都保存到本地存储
-      try {
-        const membersJson = JSON.stringify(teamMembers);
-        localStorage.setItem('teamMembers', membersJson);
-        console.log('团队成员保存成功，数据大小:', membersJson.length, '字节');
-      } catch (error) {
-        console.error('保存团队成员到本地存储失败:', error);
-      }
-    }
-  }, [teamMembers]);
-  
-  // 获取项目名称
-  const getProjectName = (projectId?: string) => {
-    if (!projectId) return '无项目';
-    const project = projects.find(p => p.id === projectId);
-    return project ? project.title : '未知项目';
-  };
-  
-  // 获取任务负责人信息
-  const getTaskAssignee = (task: Task) => {
-    if (!task.assigneeId) return null;
-    return teamMembers.find(member => member.id === task.assigneeId);
-  };
-  
-  // 获取项目颜色
-  const getProjectColor = (projectId?: string) => {
-    if (!projectId) return '#94a3b8';
-    const project = projects.find(p => p.id === projectId);
-    return project?.color || '#94a3b8';
-  };
-
-  // 计算项目完成率
-  const getProjectCompletionRate = (projectId: string) => {
-    const projectTasks = tasks.filter(task => task.projectId === projectId);
-    if (projectTasks.length === 0) return 0;
-
-    const completedTasks = projectTasks.filter(task => task.status === 'completed');
-    return Math.round((completedTasks.length / projectTasks.length) * 100);
-  };
-  
-  // 处理项目选择
-  const handleProjectSelect = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    // 只有选择了特定项目（非'all'）才显示任务
-    if (projectId !== 'all') {
+      // 设置初始化完成标志
+      setIsInitialized(true);
       setShowTasks(true);
-      console.log('选择了项目，显示任务:', projectId);
-    } else {
-      setShowTasks(false);
-      console.log('选择了"所有项目"，不显示任务，需要先选择具体项目');
     }
-  };
-  
-  // 打开添加项目对话框
-  const handleOpenAddProjectDialog = () => {
-    setEditingProject(null);
-    setProjectFormData({
-      title: '',
-      description: '',
-      status: 'planning',
-      deadline: '',
-      color: '#64748b',
-    });
-    setIsAddProjectDialogOpen(true);
-  };
-  
-  // 打开编辑项目对话框
-  const handleOpenEditProjectDialog = (project: Project) => {
-    setEditingProject(project);
-    setProjectFormData({
-      title: project.title,
-      description: project.description,
-      status: project.status,
-      deadline: project.deadline || '',
-      color: project.color || '#64748b',
-    });
-    setIsAddProjectDialogOpen(true);
-  };
-  
-  // 处理项目表单输入变化
-  const handleProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setProjectFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  // 提取关键词函数
-  const extractKeywords = (text: string): string[] => {
-    if (!text) return [];
+  }, [isInitialized]);
+
+  // 处理搜索和过滤任务
+  const filteredTasks = tasks.filter(task => {
+    // 项目筛选
+    const projectMatch = selectedProjectId === 'all' || task.projectId === selectedProjectId;
     
-    // 常见停用词（可根据需要扩展）
-    const stopWords = new Set([
-      'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as',
-      'what', 'when', 'where', 'how', 'who', 'which', 'this', 'that',
-      'these', 'those', 'then', 'just', 'so', 'than', 'such', 'both',
-      'through', 'about', 'for', 'is', 'are', 'was', 'were', 'be', 'been',
-      'to', 'of', 'in', 'on', 'at', 'by', 'from', 'with', 'into', 'during',
-      'before', 'after', 'above', 'below', 'up', 'down', 'out', 'off',
-      'over', 'under', 'again', 'further', 'then', 'once'
-    ]);
+    // 状态筛选
+    const statusMatch = activeTab === 'all' || task.status === activeTab;
     
-    // 移除标点符号，转换为小写，分词
-    const words = text.toLowerCase()
-      .replace(/[^a-zA-Z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter(word => word.length > 2 && !stopWords.has(word));
+    // 搜索筛选
+    const searchMatch = !searchQuery || 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // 统计词频
-    const wordFreq = new Map<string, number>();
-    words.forEach(word => {
-      wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
-    });
-    
-    // 按词频排序，返回前5个关键词
-    return Array.from(wordFreq.entries())
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([word]) => word.charAt(0).toUpperCase() + word.slice(1));
-  };
-  
-  // 处理项目表单提交
-  const handleSubmitProjectForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 确保表单数据有效
-    if (!projectFormData.title.trim()) {
-      alert('请输入项目标题');
-      return;
+    return projectMatch && statusMatch && searchMatch;
+  });
+
+  // 处理任务排序
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortBy === 'createdAt') {
+      return sortOrder === 'asc' 
+        ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else { // dueDate
+      const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     }
-    
-    // 提取关键词
-    const combinedText = `${projectFormData.title} ${projectFormData.description}`;
-    const keywords = extractKeywords(combinedText);
-    const projectDataWithKeywords = {
-      ...projectFormData,
-      keywords
-    };
-    
-    console.log('开始提交项目表单:', projectDataWithKeywords);
-    
-    if (editingProject) {
-      // 编辑现有项目
-      setProjects(prevProjects => 
-        prevProjects.map(project => 
-          project.id === editingProject.id
-            ? {
-                ...project,
-                ...projectDataWithKeywords,
-                updatedAt: new Date().toISOString(),
-              }
-            : project
-        )
-      );
-    } else {
-      // 添加新项目 - 确保包含所有必要字段
-      const newProject: Project = {
-        ...projectDataWithKeywords,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      console.log('创建新项目:', newProject);
-      
-      // 使用函数式更新确保获取最新的状态
-      setProjects(prevProjects => {
-        console.log('当前项目列表:', prevProjects);
-        const updatedProjects = [...prevProjects, newProject];
-        console.log('更新后的项目列表:', updatedProjects);
-        // 立即保存到本地存储
-        localStorage.setItem('projects', JSON.stringify(updatedProjects));
-        console.log('已保存到本地存储');
-        return updatedProjects;
-      });
-      
-      // 重置表单
-      setProjectFormData({
-        title: '',
-        description: '',
-        status: 'planning',
-        deadline: '',
-        color: '#64748b',
-      });
-    }
-    
-    // 关闭对话框
-    setIsAddProjectDialogOpen(false);
-  };
-  
-  // 处理项目删除
-  const handleDeleteProject = (projectId: string) => {
-    // 确认删除
-    if (confirm('确定要删除这个项目吗？这将会使所有关联的任务变成无项目状态。')) {
-      // 删除项目
-      setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
-      // 更新任务，移除项目关联
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.projectId === projectId
-            ? { ...task, projectId: undefined }
-            : task
-        )
-      );
-      // 如果当前选中的是被删除的项目，切换到全部
-      if (selectedProjectId === projectId) {
-        setSelectedProjectId('all');
+  });
+
+  // 处理任务状态变更
+  function handleStatusChange(taskId: string, newStatus: Task['status']) {
+    // 创建更新后的任务列表
+    const updatedTasks = tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          status: newStatus,
+          completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined
+        };
       }
+      return task;
+    });
+
+    // 更新状态
+    setTasks(updatedTasks);
+    
+    // 尝试保存到localStorage
+    try {
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    } catch (error) {
+      // 静默错误处理
     }
-  };
+  }
 
+  // 格式化日期显示函数
+  function formatDate(dateString: string) {
+    if (!dateString) return '无效日期';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '无效日期';
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
 
-  
   // 打开添加任务对话框
   const handleOpenAddDialog = () => {
     setEditingTask(null);
@@ -550,48 +347,9 @@ export default function TaskManagementPage() {
     });
     setIsAddDialogOpen(true);
   };
-  
-  // 打开任务详情对话框
-  const handleOpenTaskDetail = (task: Task) => {
-    setSelectedTask(task);
-    setNewComment('');
-    setIsTaskDetailOpen(true);
-  };
-  
-  // 添加任务评论
-  const handleAddComment = () => {
-    if (!selectedTask || !newComment.trim() || !user) return;
-    
-    const comment: TaskComment = {
-      id: Date.now().toString(),
-      authorId: user.email || '1', // 使用email作为ID
-      authorName: user.name || '用户',
-      authorPicture: user.picture,
-      content: newComment.trim(),
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedTasks = tasks.map(task => {
-      if (task.id === selectedTask.id) {
-        return {
-          ...task,
-          comments: [...(task.comments || []), comment]
-        };
-      }
-      return task;
-    });
-    
-    setTasks(updatedTasks);
-    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    setSelectedTask({
-      ...selectedTask,
-      comments: [...(selectedTask.comments || []), comment]
-    });
-    setNewComment('');
-  };
-  
+
   // 打开编辑任务对话框
-  const handleOpenEditDialog = (task: Task) => {
+  const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setFormData({
       title: task.title,
@@ -599,205 +357,189 @@ export default function TaskManagementPage() {
       status: task.status,
       category: task.category,
       priority: task.priority,
-      dueDate: task.dueDate,
+      dueDate: task.dueDate || '',
       projectId: task.projectId,
       assigneeId: task.assigneeId,
     });
     setIsAddDialogOpen(true);
   };
-  
-  // 处理表单输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  // 处理选择变更
-  const handleSelectChange = (field: keyof Task, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-  
-  // 处理表单提交
-  const handleSubmitForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    const now = new Date().toISOString();
 
+  // 处理表单提交 - 添加或编辑任务
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const now = new Date().toISOString();
+    let updatedTasks;
+    
     if (editingTask) {
       // 编辑现有任务
-      setTasks(prevTasks => {
-        const updatedTasks = prevTasks.map(task => {
-          if (task.id === editingTask.id) {
-            // 如果改变了负责人，更新分配时间
-            const updatedTask = {
+      updatedTasks = tasks.map(task =>
+        task.id === editingTask.id
+          ? {
               ...task,
               ...formData,
               updatedAt: now,
-            };
-
-            if (formData.assigneeId !== task.assigneeId) {
-              updatedTask.assignedAt = now;
             }
-
-            return updatedTask;
-          }
-          return task;
-        });
-
-        // 保存到localStorage
-        try {
-          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-          console.log('编辑任务后已保存到localStorage');
-        } catch (error) {
-          console.error('保存编辑的任务到localStorage失败:', error);
-        }
-
-        return updatedTasks;
-      });
+          : task
+      );
     } else {
       // 添加新任务
       const newTask: Task = {
+        id: `task-${now}-${Math.random().toString(36).substr(2, 9)}`,
         ...formData,
-        id: Date.now().toString(),
         createdAt: now,
-        assignedAt: formData.assigneeId ? now : undefined,
+        comments: [],
       };
-      setTasks(prevTasks => {
-        const updatedTasks = [...prevTasks, newTask];
-
-        // 保存到localStorage
-        try {
-          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-          console.log('添加新任务后已保存到localStorage');
-        } catch (error) {
-          console.error('保存新任务到localStorage失败:', error);
-        }
-
-        return updatedTasks;
-      });
+      updatedTasks = [...tasks, newTask];
     }
-
+    
+    // 更新状态和本地存储
+    setTasks(updatedTasks);
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    
+    // 关闭对话框
     setIsAddDialogOpen(false);
   };
-  
-  // 处理任务状态变更
-  const handleToggleComplete = (taskId: string) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map(task =>
-        task.id === taskId
+
+  // 打开任务详情
+  const handleOpenTaskDetail = (task: Task) => {
+    setSelectedTask(task);
+    setIsTaskDetailOpen(true);
+  };
+
+  // 处理添加项目
+  const handleOpenAddProjectDialog = () => {
+    setEditingProject(null);
+    setProjectFormData({
+      title: '',
+      description: '',
+      status: 'planning',
+      deadline: '',
+      color: '#64748b',
+    });
+    setIsAddProjectDialogOpen(true);
+  };
+
+  // 处理项目表单提交
+  const handleProjectSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const now = new Date().toISOString();
+    let updatedProjects;
+    
+    if (editingProject) {
+      // 编辑现有项目
+      updatedProjects = projects.map(project =>
+        project.id === editingProject.id
           ? {
-              ...task,
-              status: task.status === 'completed' ? 'todo' : 'completed',
-              completedAt: task.status === 'completed' ? undefined : new Date().toISOString(),
+              ...project,
+              ...projectFormData,
+              updatedAt: now,
             }
-          : task
+          : project
       );
-
-      // 保存到localStorage
-      try {
-        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        console.log('任务状态变更后已保存到localStorage');
-      } catch (error) {
-        console.error('保存任务状态变更到localStorage失败:', error);
-      }
-
-      return updatedTasks;
-    });
+    } else {
+      // 添加新项目
+      const newProject: Project = {
+        id: `project-${now}-${Math.random().toString(36).substr(2, 9)}`,
+        ...projectFormData,
+        createdAt: now,
+      };
+      updatedProjects = [...projects, newProject];
+    }
+    
+    // 更新状态和本地存储
+    setProjects(updatedProjects);
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+    
+    // 关闭对话框
+    setIsAddProjectDialogOpen(false);
   };
-
-  // 处理任务删除
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.filter(task => task.id !== taskId);
-
-      // 保存到localStorage
-      try {
-        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        console.log('删除任务后已保存到localStorage');
-      } catch (error) {
-        console.error('保存删除任务到localStorage失败:', error);
-      }
-
-      return updatedTasks;
-    });
-  };
-
-  // 根据当前选择的项目过滤任务
-  const filteredTasks = tasks.filter(task => {
-    // 项目过滤
-    if (selectedProjectId !== 'all' && task.projectId !== selectedProjectId) {
-      return false;
-    }
-    
-    // 状态过滤
-    if (activeTab !== 'all' && task.status !== activeTab) {
-      return false;
-    }
-    
-    // 搜索过滤
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        task.title.toLowerCase().includes(query) ||
-        task.description.toLowerCase().includes(query)
-      );
-    }
-    
-    return true;
-  });
   
-  // 排序任务
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    let comparison = 0;
-    
-    if (sortBy === 'createdAt') {
-      comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    } else if (sortBy === 'dueDate') {
-      const dateA = new Date(a.dueDate).getTime();
-      const dateB = new Date(b.dueDate).getTime();
-      comparison = isNaN(dateA) ? 1 : isNaN(dateB) ? -1 : dateA - dateB;
-    }
-    
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
+  // 处理项目删除
+  const handleDeleteProject = async (projectId: string) => {
+    console.log('开始删除项目:', projectId);
+    setIsDeleting(true);
 
-  // 打开添加任务对话框和编辑任务对话框函数已在上方声明
-  // 处理表单输入变化和表单提交函数已在上方声明
+    try {
+      // 1. 计算要删除的数据
+      const projectToDelete = projects.find(p => p.id === projectId);
+      const associatedTasks = tasks.filter(task => task.projectId === projectId);
 
-  // 处理状态变更
-  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map(task =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: newStatus,
-              completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
-            }
-          : task
-      );
+      console.log('删除项目:', projectToDelete?.title);
+      console.log('关联任务数量:', associatedTasks.length);
 
-      // 保存到localStorage
-      try {
-        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-        console.log('状态变更后已保存到localStorage');
-      } catch (error) {
-        console.error('保存状态变更到localStorage失败:', error);
+      // 2. 更新项目列表（过滤掉要删除的项目）
+      const updatedProjects = projects.filter(project => project.id !== projectId);
+
+      // 3. 更新任务列表（移除关联任务或重置它们的projectId）
+      const updatedTasks = tasks.filter(task => task.projectId !== projectId);
+
+      // 4. 更新本地存储
+      localStorage.setItem('projects', JSON.stringify(updatedProjects));
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      console.log('本地存储已更新');
+
+      // 5. 更新React状态
+      setProjects(updatedProjects);
+      setTasks(updatedTasks);
+
+      // 6. 如果删除的是当前选中的项目，重置为"所有任务"
+      if (selectedProjectId === projectId) {
+        setSelectedProjectId('all');
       }
 
-      return updatedTasks;
+      // 7. 关闭对话框
+      setIsDeleteDialogOpen(false);
+      setProjectToDelete(null);
+
+      // 8. 显示成功提示
+      toast.success(`项目"${projectToDelete?.title}"已删除，同时删除了${associatedTasks.length}个关联任务`);
+
+      console.log('删除操作完成');
+
+    } catch (error) {
+      console.error('删除项目失败:', error);
+      toast.error('删除项目失败，请重试');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
+  // 设置要删除的项目ID
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // 打开删除确认对话框
+  const handleOpenDeleteDialog = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const associatedTasks = tasks.filter(task => task.projectId === projectId);
+
+    console.log('打开删除对话框:', {
+      projectId,
+      projectName: project?.title,
+      associatedTasksCount: associatedTasks.length
     });
+
+    setProjectToDelete(projectId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // 处理项目编辑
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setProjectFormData({
+      title: project.title,
+      description: project.description,
+      status: project.status,
+      deadline: project.deadline,
+      color: project.color,
+    });
+    setIsAddProjectDialogOpen(true);
   };
 
-  // 格式化日期显示
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
-
+  // 组件的JSX渲染部分
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* 头部导航 */}
@@ -811,19 +553,19 @@ export default function TaskManagementPage() {
           {/* 桌面导航 - 放在右侧 */}
           <nav className="hidden md:flex items-center gap-6 ml-auto">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              首页
+              {translations.navigation.home}
             </Link>
             <Link href="/tasks" className="text-sm text-foreground font-medium">
-              任务管理
+              {translations.navigation.tasks}
             </Link>
             <Link href="/team" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              团队管理
+              {translations.navigation.team}
             </Link>
             <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              数据分析
+              {translations.navigation.analytics}
             </Link>
             <Button variant="outline" size="sm" className="ml-2">
-              登录
+              {translations.navigation.login}
             </Button>
           </nav>
           
@@ -837,562 +579,463 @@ export default function TaskManagementPage() {
       </header>
       
       {/* 移动端导航菜单 */}
-        {isMobileMenuOpen && (
-          <nav className="md:hidden bg-card border-b border-border py-4 px-4 flex flex-col gap-4">
-            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">首页</Link>
-            <Link href="/tasks" className="font-medium text-foreground border-l-4 border-primary pl-2">任务管理</Link>
-            <Link href="/team" className="text-muted-foreground hover:text-foreground transition-colors">团队管理</Link>
-            <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">数据分析</Link>
-          </nav>
-        )}
-        {/* 头部 */}
-        <header className="border-b border-border backdrop-blur-sm bg-background/80">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">任务管理</h1>
-                <p className="text-muted-foreground">管理和跟踪您的项目与任务</p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input 
-                    type="text" 
-                    placeholder="搜索任务..." 
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                
-                <Button variant="default" onClick={handleOpenAddDialog}>
-                  添加任务
-                </Button>
-                
-                <Button variant="secondary" onClick={handleOpenAddProjectDialog}>
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  添加项目
-                </Button>
-                
-                {/* 测试按钮 - 直接添加一个测试项目 */}
-                <Button variant="destructive" onClick={() => {
-                  const testProject: Project = {
-                    id: Date.now().toString(),
-                    title: '测试项目 ' + Date.now(),
-                    description: '这是一个测试项目',
-                    status: 'planning',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    color: '#64748b'
-                  };
-                  console.log('直接添加测试项目:', testProject);
-                  setProjects(prev => [...prev, testProject]);
-                }}>
-                  测试项目
-                </Button>
-
-                {/* 调试按钮 - 检查本地存储 */}
-                <Button variant="outline" onClick={() => {
-                  console.log('=== 本地存储调试信息 ===');
-                  console.log('tasks:', localStorage.getItem('tasks'));
-                  console.log('projects:', localStorage.getItem('projects'));
-                  console.log('teamMembers:', localStorage.getItem('teamMembers'));
-                  console.log('当前状态:');
-                  console.log('- 任务数量:', tasks.length);
-                  console.log('- 项目数量:', projects.length);
-                  console.log('- 团队成员数量:', teamMembers.length);
-                  alert(`调试信息已输出到控制台\n任务: ${tasks.length}个\n项目: ${projects.length}个\n团队成员: ${teamMembers.length}个`);
-                }}>
-                  调试存储
-                </Button>
-
-                {/* 清空项目数据按钮 */}
-                <Button variant="secondary" onClick={() => {
-                  if (confirm('确定要清空所有项目数据吗？这将删除所有项目和相关任务。')) {
-                    console.log('清空项目数据...');
-                    initializeEmptyProjects();
-                    // 同时清空任务数据
-                    setTasks([]);
-                    localStorage.setItem('tasks', JSON.stringify([]));
-                    alert('项目数据已清空，现在可以创建新项目了');
-                  }
-                }}>
-                  清空项目
-                </Button>
-              </div>
-            </div>
+      {isMobileMenuOpen && (
+        <nav className="md:hidden bg-card border-b border-border py-4 px-4 flex flex-col gap-4">
+          <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.home}</Link>
+              <Link href="/tasks" className="font-medium text-foreground border-l-4 border-primary pl-2">{translations.navigation.tasks}</Link>
+              <Link href="/team" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.team}</Link>
+              <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.analytics}</Link>
+        </nav>
+      )}
+      
+      {/* 主内容区 */}
+      <main className="container mx-auto px-4 py-6">
+        {/* 页面标题和操作区 */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">{translations.navigation.tasks}</h1>
+            <p className="text-muted-foreground">管理和跟踪您的项目与任务</p>
           </div>
-        </header>
-        
-
-
-        {/* 项目和任务过滤工具栏 */}
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* 项目选择 */}
-            <div className="w-full md:w-64">
-              <Select value={selectedProjectId} onValueChange={handleProjectSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择项目" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">所有项目</SelectItem>
-                  {projects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
-                            <span className="truncate">{project.title}</span>
-                          </div>
-                          {project.keywords && project.keywords.length > 0 && (
-                            <div className="flex flex-wrap gap-1 ml-5">
-                              {project.keywords.slice(0, 3).map((keyword, index) => (
-                                <span key={index} className="text-xs text-muted-foreground">#{keyword}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input 
+                type="text" 
+                placeholder="搜索任务..." 
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             
-            {/* 只有在选择了特定项目或所有项目时才显示任务标签 */}
-            {showTasks && (
-              <div className="flex-1">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="w-full justify-start">
-                    <TabsTrigger value="all">全部 ({filteredTasks.length})</TabsTrigger>
-                    <TabsTrigger value="todo">待办 ({tasks.filter(t => t.status === 'todo' && (!selectedProjectId || selectedProjectId === 'all' || t.projectId === selectedProjectId)).length})</TabsTrigger>
-                    <TabsTrigger value="in-progress">进行中 ({tasks.filter(t => t.status === 'in-progress' && (!selectedProjectId || selectedProjectId === 'all' || t.projectId === selectedProjectId)).length})</TabsTrigger>
-                    <TabsTrigger value="completed">已完成 ({tasks.filter(t => t.status === 'completed' && (!selectedProjectId || selectedProjectId === 'all' || t.projectId === selectedProjectId)).length})</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            )}
+            <Button variant="default" onClick={handleOpenAddDialog}>
+              添加任务
+            </Button>
+            
+            <Button variant="secondary" onClick={handleOpenAddProjectDialog}>
+              <PlusCircle className="w-4 h-4 mr-2" />
+              添加项目
+            </Button>
           </div>
         </div>
         
-        {/* 项目列表 */}
-        <div className="container mx-auto px-4 py-4 mb-6">
-          <h2 className="text-lg font-semibold mb-3">我的项目</h2>
-          {projects.length === 0 ? (
-            <Card className="p-8 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PlusCircle className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">还没有项目</h3>
-                <p className="text-muted-foreground mb-4">
-                  点击上方的"添加项目"按钮来创建你的第一个项目
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  项目是组织任务的最佳方式，你可以为不同的工作创建不同的项目
-                </p>
-              </div>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {projects.map(project => (
-                <Card key={project.id} className={`border overflow-hidden ${selectedProjectId === project.id ? 'ring-2 ring-primary' : ''}`}>
-                  <div className="p-4 flex justify-between items-start gap-3 cursor-pointer hover:bg-muted/30 rounded-md transition-colors" onClick={() => handleProjectSelect(project.id)}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 min-w-0">
-                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: project.color }}></div>
-                        <h3 className="font-medium truncate min-w-0">{project.title}</h3>
+        {/* 项目和任务展示区 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* 左侧项目列表 */}
+          <div className="md:col-span-1">
+            <Card className="p-4 sticky top-24">
+              <h2 className="text-lg font-semibold mb-4">项目列表</h2>
+              <div className="flex flex-col gap-2">
+                <button 
+                  className={`px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === 'all' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+                  onClick={() => setSelectedProjectId('all')}
+                >
+                  所有任务
+                </button>
+                {projects.map((project) => (
+                  <div key={project.id} className="relative">
+                    <button
+                      className={`w-full px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === project.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+                      onClick={() => setSelectedProjectId(project.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
+                        <span className="truncate">{project.title}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 min-w-0">{project.description}</p>
-                      {/* 显示关键词标签 */}
-                      {project.keywords && project.keywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {project.keywords.map((keyword, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs py-0 px-1.5">
-                              #{keyword}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge className={projectStatusLabels[project.status].color}>
-                          {projectStatusLabels[project.status].label}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {tasks.filter(t => t.projectId === project.id).length} 个任务
-                        </span>
-                      </div>
-                      {/* 项目完成进度 */}
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">完成进度</span>
-                          <span className="text-xs font-medium">{getProjectCompletionRate(project.id)}%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div
-                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${getProjectCompletionRate(project.id)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
+                    </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button
-                          className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
                           onClick={(e) => e.stopPropagation()}
-                          aria-label="项目操作菜单"
                         >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                          <MoreHorizontal className="h-3 w-3" />
+                        </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleOpenEditProjectDialog(project)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>编辑项目</span>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditProject(project)}>
+                          编辑
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteProject(project.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>删除项目</span>
+                        <DropdownMenuItem onClick={() => handleOpenDeleteDialog(project.id)}>
+                          删除
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-      {/* 主要内容 */}
-      <main className="container mx-auto px-4 py-6">
-        {showTasks ? (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <div className="text-muted-foreground">
-                显示 {sortedTasks.length} 个任务 - 项目: {getProjectName(selectedProjectId)}
+                ))}
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setSortBy('createdAt');
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  创建时间 {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setSortBy('dueDate');
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  截止日期 {sortBy === 'dueDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {sortedTasks.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">没有找到任务</p>
-                  <Button variant="secondary" className="mt-4" onClick={handleOpenAddDialog}>
-                    添加任务
-                  </Button>
+              {/* 排序控制 */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium mb-2">排序方式</h3>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'createdAt' | 'dueDate')}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="选择排序字段" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="createdAt">创建时间</SelectItem>
+                        <SelectItem value="dueDate">截止日期</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-9 w-9 p-0"
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    >
+                      {sortOrder === 'asc' ? '↑' : '↓'}
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                sortedTasks.map(task => (
-                  <Card key={task.id} className={`border ${task.status === 'completed' ? 'opacity-70' : ''}`}>
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox 
-                          id={`task-${task.id}`}
-                          checked={task.status === 'completed'}
-                          onCheckedChange={() => handleToggleComplete(task.id)}
-                          className="mt-1"
-                        />
-                          
-                        <div className="flex-1 cursor-pointer" onClick={() => handleOpenTaskDetail(task)}>
-                          <div className="flex items-center gap-2">
-                            <label 
-                              htmlFor={`task-${task.id}`}
-                              className={`font-medium truncate ${task.status === 'completed' ? 'text-muted-foreground' : ''}`}
-                            >
-                              {task.title}
-                            </label>
-                              
-                            {/* 显示项目标签 */}
-                            {task.projectId && (
-                              <Badge style={{ backgroundColor: `${getProjectColor(task.projectId)}20`, color: getProjectColor(task.projectId) }} className="font-normal">
-                                {getProjectName(task.projectId)}
-                              </Badge>
-                            )}
+              </div>
+            </Card>
+          </div>
+          
+          {/* 右侧任务列表 */}
+          <div className="md:col-span-3">
+            {/* 状态标签页 */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="all">
+                  全部
+                  <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="todo">
+                  待办
+                  <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'todo').length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="in-progress">
+                  进行中
+                  <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'in-progress').length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="completed">
+                  已完成
+                  <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'completed').length}</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {/* 任务卡片列表 */}
+            {showTasks && sortedTasks.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {sortedTasks.map((task) => (
+                  <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className={categoryLabels[task.category]?.color || "bg-muted"}>
+                          {categoryLabels[task.category]?.label || task.category}
+                        </Badge>
+                        <Badge className={priorityLabels[task.priority]?.color || "bg-muted"}>
+                          {priorityLabels[task.priority]?.label || task.priority}
+                        </Badge>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                            编辑
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenTaskDetail(task)}>
+                            详情
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <h3 className="text-lg font-medium mb-1" onClick={() => handleOpenTaskDetail(task)}>
+                      {task.title}
+                    </h3>
+                    
+                    <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                      {task.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap justify-between items-center gap-2">
+                      <div className="text-xs text-muted-foreground">
+                        {task.dueDate && `截止: ${formatDate(task.dueDate)}`}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          value={task.status} 
+                          onValueChange={(value) => handleStatusChange(task.id, value as Task['status'])}
+                        >
+                          <SelectTrigger className="h-8 w-[120px] text-xs">
+                            <SelectValue placeholder="状态" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(statusLabels).map(([key, value]) => (
+                              <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        {task.assigneeId && (
+                          <div className="flex -space-x-2">
+                            {teamMembers
+                              .filter(member => member.id === task.assigneeId)
+                              .map((member) => (
+                                <img
+                                  key={member.id}
+                                  src={member.avatar || '/placeholder-user.jpg'}
+                                  alt={member.name}
+                                  className="w-6 h-6 rounded-full border border-background"
+                                />
+                              ))}
                           </div>
-                            
-                          {task.description && (
-                            <p className="text-muted-foreground mt-1 line-clamp-2 truncate">{task.description}</p>
-                          )}
-                            
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            <Badge className={categoryLabels[task.category].color}>
-                              {categoryLabels[task.category].label}
-                            </Badge>
-                            <Badge className={priorityLabels[task.priority].color}>
-                              {priorityLabels[task.priority].label} 优先级
-                            </Badge>
-                            <Badge className={statusLabels[task.status].color}>
-                              {statusLabels[task.status].label}
-                            </Badge>
-                          </div>
-                        </div>
-                          
-                        <div className="flex flex-col items-end">
-                          <div className="text-sm text-muted-foreground">
-                            {task.dueDate ? formatDate(task.dueDate) : '无截止日期'}
-                          </div>
-                          
-                          {(() => {
-                            const assignee = getTaskAssignee(task);
-                            return assignee ? (
-                              <div className="flex items-center gap-2 mt-1">
-                                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                                  {assignee.name.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="text-xs font-medium">{assignee.name}</span>
-                              </div>
-                            ) : null;
-                          })()}
-                            
-                          <div className="flex gap-1 mt-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditDialog(task);
-                              }}
-                            >
-                              编辑
-                            </Button>
-                              
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTask(task.id);
-                              }}
-                            >
-                              删除
-                            </Button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </Card>
-                ))
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-12 bg-muted/30 rounded-lg">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckSquare className="w-8 h-8 text-muted-foreground" />
+                ))}
               </div>
-              <h3 className="text-lg font-semibold mb-2">请选择一个项目</h3>
-              <p className="text-muted-foreground mb-4">
-                从上方的项目卡片中选择一个项目来查看和管理相关任务
-              </p>
-              {projects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  还没有项目？点击上方的"添加项目"按钮创建你的第一个项目
+            ) : (
+              <Card className="p-8 text-center">
+                <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">暂无任务</h3>
+                <p className="text-muted-foreground mb-6">
+                  {selectedProjectId !== 'all' ? `当前项目没有${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}任务` : `暂无${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}任务`}
                 </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  项目是组织任务的最佳方式，每个项目都有自己独立的任务列表
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* 页脚 */}
-      <footer className="border-t border-border py-8 mt-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Logo className="w-6 h-6" />
-              <span className="font-semibold text-foreground">GoTaskMind</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-                © 2025 GoTaskMind. AI-powered task management tool.
-              </p>
+                <Button variant="default" onClick={handleOpenAddDialog}>
+                  <PlusSquare className="h-4 w-4 mr-2" />
+                  添加任务
+                </Button>
+              </Card>
+            )}
           </div>
         </div>
-      </footer>
-
+      </main>
+      
       {/* 添加/编辑任务对话框 */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTask ? '编辑任务' : '添加新任务'}</DialogTitle>
+            <DialogTitle>{editingTask ? '编辑任务' : '添加任务'}</DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmitForm} className="space-y-4 mt-4">
+
+          <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Task Title</Label>
+              <Label htmlFor="title">任务标题</Label>
               <Input
                 id="title"
-                name="title"
                 value={formData.title}
-                onChange={handleInputChange}
-                placeholder="输入任务标题"
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description">Task Description</Label>
+              <Label htmlFor="description">任务描述</Label>
               <Textarea
                 id="description"
-                name="description"
                 value={formData.description}
-                onChange={handleInputChange}
-                placeholder="输入任务描述（可选）"
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={3}
               />
             </div>
             
-            {/* 添加项目选择 */}
-            <div className="space-y-2">
-              <Label htmlFor="projectId">项目</Label>
-              <Select
-                value={formData.projectId || 'none'}
-                onValueChange={(value) => handleSelectChange('projectId', value === 'none' ? undefined : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择项目" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">无项目</SelectItem>
-                  {projects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
-                        {project.title}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* 添加负责人选择 */}
-            <div className="space-y-2">
-              <Label htmlFor="assigneeId">负责人</Label>
-              <Select
-                value={formData.assigneeId || 'none'}
-                onValueChange={(value) => handleSelectChange('assigneeId', value === 'none' ? undefined : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择团队成员" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">未分配</SelectItem>
-                  {teamMembers.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                          {member.name.charAt(0).toUpperCase()}
-                        </div>
-                        {member.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">状态</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as Task['status'] }))}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="选择状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(statusLabels).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="category">分类</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value: Task['category']) => handleSelectChange('category', value)}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as Task['category'] }))}
                 >
                   <SelectTrigger id="category">
                     <SelectValue placeholder="选择分类" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="work">工作</SelectItem>
-                    <SelectItem value="personal">个人</SelectItem>
-                    <SelectItem value="learning">学习</SelectItem>
-                    <SelectItem value="other">其他</SelectItem>
+                    {Object.entries(categoryLabels).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="priority">优先级</Label>
                 <Select
                   value={formData.priority}
-                  onValueChange={(value: Task['priority']) => handleSelectChange('priority', value)}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as Task['priority'] }))}
                 >
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="选择优先级" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">低</SelectItem>
-                    <SelectItem value="medium">中</SelectItem>
-                    <SelectItem value="high">高</SelectItem>
+                    {Object.entries(priorityLabels).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dueDate">截止日期</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="projectId">项目</Label>
+                <Select
+                  value={formData.projectId || 'none'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === 'none' ? undefined : value }))}
+                >
+                  <SelectTrigger id="projectId">
+                    <SelectValue placeholder="选择项目" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无项目</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assigneeId">指派给</Label>
+                <Select
+                  value={formData.assigneeId || 'none'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, assigneeId: value === 'none' ? undefined : value }))}
+                >
+                  <SelectTrigger id="assigneeId">
+                    <SelectValue placeholder="选择成员" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">未指派</SelectItem>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                取消
+              </Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                {editingTask ? '更新' : '添加'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 添加/编辑项目对话框 */}
+      <Dialog open={isAddProjectDialogOpen} onOpenChange={setIsAddProjectDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingProject ? '编辑项目' : '添加项目'}</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleProjectSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="dueDate">截止日期</Label>
+              <Label htmlFor="project-title">项目名称</Label>
               <Input
-                id="dueDate"
-                name="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={handleInputChange}
+                id="project-title"
+                value={projectFormData.title}
+                onChange={(e) => setProjectFormData(prev => ({ ...prev, title: e.target.value }))}
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="status">状态</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: Task['status']) => handleSelectChange('status', value)}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="选择状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">待办</SelectItem>
-                  <SelectItem value="in-progress">进行中</SelectItem>
-                  <SelectItem value="completed">已完成</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="project-description">项目描述</Label>
+              <Textarea
+                id="project-description"
+                value={projectFormData.description}
+                onChange={(e) => setProjectFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-status">状态</Label>
+                <Select
+                  value={projectFormData.status}
+                  onValueChange={(value) => setProjectFormData(prev => ({ ...prev, status: value as Project['status'] }))}
+                >
+                  <SelectTrigger id="project-status">
+                    <SelectValue placeholder="选择状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(projectStatusLabels).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="project-deadline">截止日期</Label>
+                <Input
+                  id="project-deadline"
+                  type="date"
+                  value={projectFormData.deadline}
+                  onChange={(e) => setProjectFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="project-color">项目颜色</Label>
+              <Input
+                id="project-color"
+                type="color"
+                value={projectFormData.color}
+                onChange={(e) => setProjectFormData(prev => ({ ...prev, color: e.target.value }))}
+              />
             </div>
             
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsAddDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setIsAddProjectDialogOpen(false)}>
                 取消
               </Button>
-              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                {editingTask ? '更新' : '添加'}
+              <Button type="submit">
+                {editingProject ? '更新' : '添加'}
               </Button>
             </DialogFooter>
           </form>
@@ -1401,289 +1044,247 @@ export default function TaskManagementPage() {
       
       {/* 任务详情对话框 */}
       <Dialog open={isTaskDetailOpen} onOpenChange={setIsTaskDetailOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedTask?.title}</DialogTitle>
+          </DialogHeader>
+          
           {selectedTask && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedTask.title}</DialogTitle>
-              </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">描述</h3>
+                <p className="text-sm">{selectedTask.description || '无描述'}</p>
+              </div>
               
-              <div className="space-y-6 py-4">
-                {/* 任务信息 */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge className={categoryLabels[selectedTask.category].color}>
-                      {categoryLabels[selectedTask.category].label}
-                    </Badge>
-                    <Badge className={priorityLabels[selectedTask.priority].color}>
-                      {priorityLabels[selectedTask.priority].label} 优先级
-                    </Badge>
-                    <Badge className={statusLabels[selectedTask.status].color}>
-                      {statusLabels[selectedTask.status].label}
-                    </Badge>
-                  </div>
-                  
-                  {selectedTask.description && (
-                    <div className="space-y-2">
-                      <h4 className="font-medium">描述</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedTask.description}</p>
-                    </div>
-                  )}
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">状态</h3>
+                  <Badge variant="secondary">
+                    {statusLabels[selectedTask.status] || selectedTask.status}
+                  </Badge>
                 </div>
                 
-                <Separator />
-                
-                {/* 任务元信息 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-sm text-muted-foreground">截止日期</span>
-                    <p className="font-medium">{selectedTask.dueDate ? formatDate(selectedTask.dueDate) : '无截止日期'}</p>
-                  </div>
-                  
-                  {selectedTask.assigneeId && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-muted-foreground">负责人</span>
-                      {(() => {
-                        const assignee = getTaskAssignee(selectedTask);
-                        return assignee ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                              {assignee.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-medium">{assignee.name}</span>
-                          </div>
-                        ) : (
-                          <p className="font-medium text-muted-foreground">未知</p>
-                        );
-                      })()}
-                    </div>
-                  )}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">分类</h3>
+                  <Badge variant="outline">
+                    {categoryLabels[selectedTask.category]?.label || selectedTask.category}
+                  </Badge>
                 </div>
                 
-                <Separator />
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">优先级</h3>
+                  <Badge 
+                    variant={selectedTask.priority === 'high' ? 'destructive' : selectedTask.priority === 'medium' ? 'default' : 'secondary'}
+                    className={
+                      selectedTask.priority === 'high' ? 'bg-red-500' : 
+                      selectedTask.priority === 'medium' ? 'bg-amber-500' : 'bg-green-500'
+                    }
+                  >
+                    {priorityLabels[selectedTask.priority] || selectedTask.priority}
+                  </Badge>
+                </div>
                 
-                {/* 评论区 */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">评论 ({selectedTask.comments?.length || 0})</h4>
-                  
-                  {/* 评论输入框 */}
-                  <div className="space-y-2">
-                    <Textarea
-                      placeholder="添加评论..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="min-h-[80px]"
-                    />
-                    <div className="flex justify-end">
-                      <Button 
-                        onClick={handleAddComment}
-                        disabled={!newComment.trim() || !isAuthenticated}
-                      >
-                        发送评论
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* 评论列表 */}
-                  {selectedTask.comments && selectedTask.comments.length > 0 ? (
-                    <div className="space-y-3">
-                      {selectedTask.comments.map((comment) => (
-                        <div key={comment.id} className="p-3 bg-muted/50 rounded-md">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                              {comment.authorName.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="font-medium text-sm">{comment.authorName}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(comment.createdAt).toLocaleString()}
-                            </div>
-                          </div>
-                          <p className="text-sm">{comment.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground py-4 text-center">
-                      暂无评论，添加第一条评论吧
-                    </div>
-                  )}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">截止日期</h3>
+                  <p>{selectedTask.dueDate ? formatDate(selectedTask.dueDate) : '无'}</p>
                 </div>
               </div>
               
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">项目</h3>
+                  <p>
+                    {selectedTask.projectId
+                      ? projects.find(p => p.id === selectedTask.projectId)?.title || '未知项目'
+                      : '无项目'
+                    }
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">指派给</h3>
+                  <p>
+                    {selectedTask.assigneeId
+                      ? teamMembers.find(m => m.id === selectedTask.assigneeId)?.name || '未知用户'
+                      : '未指派'
+                    }
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">创建时间</h3>
+                <p className="text-sm">{formatDate(selectedTask.createdAt)}</p>
+              </div>
+              
               <DialogFooter>
-                <Button variant="secondary" onClick={() => setIsTaskDetailOpen(false)}>关闭</Button>
-                {isAuthenticated && (
-                  <Button onClick={() => {
-                    setIsTaskDetailOpen(false);
-                    handleOpenEditDialog(selectedTask);
-                  }}>
-                    编辑任务
-                  </Button>
-                )}
+                <Button variant="outline" onClick={() => setIsTaskDetailOpen(false)}>
+                  关闭
+                </Button>
+                <Button onClick={() => {
+                  setIsTaskDetailOpen(false);
+                  handleEditTask(selectedTask);
+                }}>
+                  编辑
+                </Button>
               </DialogFooter>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
       
-      {/* 项目编辑对话框 */}
-      <Dialog open={isAddProjectDialogOpen} onOpenChange={setIsAddProjectDialogOpen}>
-        <DialogContent>
+      {/* 项目删除确认对话框 */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingProject ? 'Edit Project' : 'Add Project'}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.432-3L13.216 7H8.784c-.773 1.333-1.892 2-3.432 2H4.5c-1.548 0-2.5-1.452-2.5-3V4.5C2 3.052 3.052 2 4.5 2h1.938l1.5 1.5H8c.646 0 1.258.125 1.736.328l4.06 2.928c.37.266.688.598 1.066.598.773 0 1.48-.276 2.032-.633 2.032-1.668 0-2.896-2.132-3.032l-4.06-2.928c-.378-.266-.724-.598-1.066-.598H4.5z" />
+              </svg>
+              确认删除项目
+            </DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmitProjectForm} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="projectTitle">Project Title</Label>
-              <Input 
-                id="projectTitle" 
-                name="title"
-                value={projectFormData.title} 
-                onChange={handleProjectInputChange}
-                placeholder="Enter project name"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="projectDescription">Description</Label>
-              <Textarea 
-                id="projectDescription" 
-                name="description"
-                value={projectFormData.description} 
-                onChange={handleProjectInputChange}
-                placeholder="Enter project description"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="projectColor">Project Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {['#64748b', '#6b7280', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#94a3b8'].map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setProjectFormData({...projectFormData, color})}
-                    className={`w-8 h-8 rounded-full transition-all ${projectFormData.color === color ? 'ring-2 ring-offset-2 ring-primary' : 'hover:ring-2'}`}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Select color ${color}`}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="projectStatus">Project Status</Label>
-              <select
-                id="projectStatus"
-                name="status"
-                value={projectFormData.status}
-                onChange={handleProjectInputChange}
-                className="w-full bg-background border border-border rounded-md px-3 py-2"
-              >
-                {Object.entries(projectStatusLabels).map(([value, { label }]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="projectDeadline">Deadline</Label>
-              <Input 
-                id="projectDeadline" 
-                name="deadline"
-                type="date" 
-                value={projectFormData.deadline} 
-                onChange={handleProjectInputChange}
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsAddProjectDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingProject ? 'Update' : 'Add'}
-              </Button>
-            </DialogFooter>
-          </form>
+
+          <div className="py-4">
+            {projectToDelete && (() => {
+              const project = projects.find(p => p.id === projectToDelete);
+              const associatedTasks = tasks.filter(task => task.projectId === projectToDelete);
+
+              return (
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: project?.color || '#64748b' }}
+                      ></div>
+                      <span className="font-medium">{project?.title}</span>
+                    </div>
+                    {project?.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {project.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {associatedTasks.length > 0 && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-red-800">
+                            此项目有 <span className="font-bold">{associatedTasks.length}</span> 个关联任务
+                          </p>
+                          <p className="text-xs text-red-600 mt-1">
+                            删除项目将同时删除这些任务，此操作无法撤销！
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-muted-foreground">
+                    <p>确定要删除这个项目吗？</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+              className="w-full sm:w-auto"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => projectToDelete && handleDeleteProject(projectToDelete)}
+              disabled={isDeleting || !projectToDelete}
+              className="w-full sm:w-auto"
+            >
+              <span className="flex items-center gap-2">
+                {isDeleting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    删除中...
+                  </>
+                ) : (
+                  <>
+                    删除项目
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m0-6l1 1m0 0l1-1m-6-6h6" />
+                    </svg>
+                  </>
+                )}
+              </span>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* 移动端导航对话框 */}
+      
+      {/* 移动端菜单对话框 */}
       <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader className="pb-4">
-            <DialogTitle>GoTaskMind</DialogTitle>
-          </DialogHeader>
-          <nav className="flex flex-col gap-2">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 py-3 px-4 rounded-md hover:bg-muted transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Home className="w-5 h-5" />
+        <DialogContent className="sm:max-w-[300px]">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Logo className="w-6 h-6" />
+              <span className="font-semibold text-sm">GoTaskMind</span>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsMobileMenuOpen(false)}>
+              ✕
+            </Button>
+          </div>
+          
+          <nav className="flex flex-col gap-4">
+            <Link href="/" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
+              <Home className="h-4 w-4" />
               <span>首页</span>
             </Link>
-            <Link 
-              href="/tasks" 
-              className="flex items-center gap-2 py-3 px-4 rounded-md bg-muted transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <CheckSquare className="w-5 h-5" />
+            <Link href="/tasks" className="flex items-center gap-3 text-foreground font-medium py-2 px-3 rounded-md bg-primary/10">
+              <CheckSquare className="h-4 w-4" />
               <span>任务管理</span>
             </Link>
-            <Button 
-              variant="ghost" 
-              className="flex items-center justify-start gap-2 py-3 px-4 rounded-md hover:bg-muted transition-colors"
-              onClick={() => {
-                handleOpenAddProjectDialog();
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              <PlusSquare className="w-5 h-5" />
-              <span>添加项目</span>
-            </Button>
-            <Link 
-              href="/analytics" 
-              className="flex items-center gap-2 py-3 px-4 rounded-md hover:bg-muted transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <BarChart2 className="w-5 h-5" />
+            <Link href="/team" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
+              <Users className="h-4 w-4" />
+              <span>团队管理</span>
+            </Link>
+            <Link href="/analytics" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
+              <BarChart2 className="h-4 w-4" />
               <span>数据分析</span>
             </Link>
-            
-            {/* 最近项目快速访问 */}
-            {projects.length > 0 && (
-              <div className="mt-4">
-                <div className="px-4 py-2 text-sm text-muted-foreground">最近项目</div>
-                {projects.slice(0, 3).map(project => (
-                  <button
-                    key={project.id}
-                    className="flex items-center gap-2 py-3 px-4 rounded-md hover:bg-muted transition-colors w-full text-left"
-                    onClick={() => {
-                      handleProjectSelect(project.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
-                    <span className="truncate">{project.title}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            <div className="border-t border-border pt-4 mt-4">
-              <Button className="w-full">登录</Button>
-              <Button variant="secondary" className="w-full mt-2">
-                <Link href="/team" className="w-full h-full flex items-center justify-center">
-                  团队管理
-                </Link>
-              </Button>
-            </div>
           </nav>
+          
+          <div className="border-t border-border mt-6 pt-6">
+            <h3 className="text-sm font-medium mb-3">我的项目</h3>
+            <div className="flex flex-col gap-2">
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  className="flex items-center gap-2 text-left py-2 px-3 rounded-md text-muted-foreground hover:bg-muted"
+                  onClick={() => {
+                    setSelectedProjectId(project.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
+                  <span className="truncate">{project.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="border-t border-border mt-6 pt-6">
+            <Button className="w-full">登录</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

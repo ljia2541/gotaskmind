@@ -102,9 +102,9 @@ export function useAuth() {
       
       // 在localStorage中更新认证状态
       localStorage.setItem('auth_state', JSON.stringify({ isAuthenticated: true }));
-      
-      // 重新加载页面以应用更改
-      window.location.reload();
+
+      // 不重新加载页面，让React状态管理更新
+      console.log('模拟登录完成，用户状态已更新');
     } catch (error) {
       console.error('模拟登录失败:', error);
     }

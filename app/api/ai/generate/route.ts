@@ -10,16 +10,7 @@ import { AIService } from '@/app/lib/ai-service';
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. 验证用户认证状态
-    const sessionCookie = request.cookies.get('user_session')?.value;
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { error: '请先登录后再使用AI任务生成功能' },
-        { status: 401 }
-      );
-    }
-    
-    // 2. 解析请求体数据
+    // 1. 解析请求体数据
     const { projectDescription } = await request.json();
     
     // 2. 验证请求参数

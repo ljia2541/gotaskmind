@@ -5,7 +5,7 @@ export type TeamMember = {
   name: string;
   picture?: string;
   role?: 'admin' | 'member' | 'viewer'; // 团队角色
-  status?: 'active' | 'invited' | 'inactive'; // 成员状态
+  status?: 'active' | 'invited' | 'inactive' | 'suspended'; // 成员状态
   joinedAt?: string; // 加入时间
 };
 
@@ -45,4 +45,5 @@ export const memberStatusLabels = {
   active: { label: '活跃', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' },
   invited: { label: '已邀请', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' },
   inactive: { label: '非活跃', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100' },
+  suspended: { label: '已暂停', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' },
 };

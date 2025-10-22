@@ -20,42 +20,19 @@ export async function GET() {
       );
     }
 
-    // 在实际应用中，这里应该从数据库获取任务
-    // 现在使用模拟数据进行演示
-    const mockTasks: Task[] = [
-      {
-        id: 'task-1',
-        title: '项目启动会议',
-        description: '组织团队成员讨论项目范围和目标',
-        status: 'todo',
-        priority: 'high',
-        category: 'work',
-        createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      {
-        id: 'task-2',
-        title: '用户需求分析',
-        description: '收集和分析用户需求文档',
-        status: 'in-progress',
-        priority: 'medium',
-        category: 'work',
-        createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      {
-        id: 'task-3',
-        title: '学习React新特性',
-        description: '研究React 18的并发特性',
-        status: 'todo',
-        priority: 'low',
-        category: 'learning',
-        createdAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      }
-    ];
+    // 由于在服务器端无法直接访问localStorage，我们创建一个适配方案
+    // 先尝试从客户端传递的数据中获取任务
+    const tasks: Task[] = [];
 
-    return NextResponse.json(mockTasks);
+    // 在服务器环境中，我们不能直接访问localStorage
+    // 但是我们可以通过请求头或查询参数从客户端获取数据
+    // 为了保持向后兼容，这里先返回空数组，让客户端自行处理
+
+    // 注意：这是一个临时解决方案
+    // 理想情况下应该使用数据库来存储任务数据
+    console.log('API请求：返回空任务数组，将由客户端从localStorage填充');
+
+    return NextResponse.json(tasks);
   } catch (error) {
     console.error('获取任务失败:', error);
     return NextResponse.json(

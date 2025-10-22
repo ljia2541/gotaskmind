@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +11,7 @@ import { useAuth } from '@/app/hooks/use-auth';
 import { LogOut, UserCircle2, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/components/ui/use-mobile';
+import { LanguageService, analyticsTranslations } from '@/app/lib/language-service';
 
 /**
  * 认证导航组件
@@ -21,6 +23,18 @@ export function AuthNavigation() {
   // 使用Next.js提供的usePathname钩子获取当前路径，避免使用window对象
   const pathname = usePathname();
 
+  // 服务端渲染时始终使用默认语言(中文)，避免Hydration不匹配
+  // 在客户端组件中，可以在useEffect中更新语言
+  const [userLanguage, setUserLanguage] = useState('zh');
+  const [translations, setTranslations] = useState(analyticsTranslations['zh']);
+  
+  // 在客户端加载后更新语言偏好
+  useEffect(() => {
+    const clientLanguage = LanguageService.getUserLanguage() || 'zh';
+    setUserLanguage(clientLanguage);
+    setTranslations(analyticsTranslations[clientLanguage]);
+  }, [])
+  
   // 桌面端导航 - 放在右侧
   const DesktopNavigation = () => {
     // 获取当前路径，用于高亮当前页面
@@ -32,32 +46,32 @@ export function AuthNavigation() {
           href="/" 
           className={`text-sm transition-colors ${currentPath === '/' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          首页
+          {translations.navigation.home}
         </Link>
         <Link 
           href="/tasks" 
           className={`text-sm transition-colors ${currentPath === '/tasks' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          任务管理
+          {translations.navigation.tasks}
         </Link>
         <Link 
           href="/team" 
           className={`text-sm transition-colors ${currentPath === '/team' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          团队管理
+          {translations.navigation.team}
         </Link>
         <Link 
           href="/analytics" 
           className={`text-sm transition-colors ${currentPath === '/analytics' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          数据分析
+          {translations.navigation.analytics}
         </Link>
         {isAuthenticated ? (
-          <AuthenticatedMenu user={user!} onLogout={logout} />
+          <AuthenticatedMenu user={user!} onLogout={logout} translations={translations} />
         ) : (
           <Button variant="default" size="sm" onClick={login}>
-            登录
-          </Button>
+          {translations.navigation.login}
+        </Button>
         )}
       </nav>
     );
@@ -77,25 +91,25 @@ export function AuthNavigation() {
           href="/" 
           className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
         >
-          首页
+          {translations.navigation.home}
         </Link>
         <Link 
           href="/tasks" 
           className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
         >
-          任务管理
+          {translations.navigation.tasks}
         </Link>
         <Link 
           href="/analytics" 
           className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
         >
-          数据分析
+          {translations.navigation.analytics}
         </Link>
         <Link 
           href="/team" 
           className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
         >
-          团队管理
+          {translations.navigation.team}
         </Link>
         <Separator />
           {isAuthenticated ? (
@@ -120,12 +134,12 @@ export function AuthNavigation() {
                 onClick={logout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                退出登录
+                {translations.navigation.logout}
               </Button>
             </>
           ) : (
             <Button variant="default" className="w-full" onClick={login}>
-              登录
+              {translations.navigation.login}
             </Button>
           )}
         </div>
@@ -147,9 +161,10 @@ export function AuthNavigation() {
 interface AuthenticatedMenuProps {
   user: { name: string; email: string; picture?: string };
   onLogout: () => void;
+  translations: typeof analyticsTranslations.zh; // 添加translations prop类型
 }
 
-function AuthenticatedMenu({ user, onLogout }: AuthenticatedMenuProps) {
+function AuthenticatedMenu({ user, onLogout, translations }: AuthenticatedMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -182,7 +197,7 @@ function AuthenticatedMenu({ user, onLogout }: AuthenticatedMenuProps) {
         <Separator />
         <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>退出登录</span>
+          <span>{translations.navigation.logout}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

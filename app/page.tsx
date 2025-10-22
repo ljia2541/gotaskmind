@@ -10,6 +10,8 @@ import { DecorativeElements } from "@/components/decorative-elements"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { AuthNavigation } from "@/app/components/auth-navigation"
+import { useAuth } from "@/app/hooks/use-auth"
+import { LanguageService, analyticsTranslations } from "@/app/lib/language-service"
 
 const examplePrompts = [
   "Build a fitness tracking mobile app with social features",
@@ -21,6 +23,12 @@ const examplePrompts = [
 ]
 
 export default function LandingPage() {
+  const { login, isAuthenticated } = useAuth()
+  // 获取用户语言偏好或使用默认语言（确保服务器端和客户端渲染一致性）
+  const defaultLanguage = 'zh'; // 默认使用中文
+  const userLanguage = typeof window !== 'undefined' ? (LanguageService.getUserLanguage() || defaultLanguage) : defaultLanguage;
+  // 获取对应的翻译文本
+  const translations = analyticsTranslations[userLanguage] || analyticsTranslations[defaultLanguage];
   const [isLoading, setIsLoading] = useState(false)
   const [currentExample, setCurrentExample] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -110,7 +118,7 @@ export default function LandingPage() {
       return;
     }
     
-    // 创建新项目
+    // 创建新项目 - 确保包含所有必要字段
     const projectTitle = projectPrompt.trim() || 'AI生成项目';
     const newProject = {
       id: `project-${Date.now()}`,
@@ -119,8 +127,15 @@ export default function LandingPage() {
       status: 'planning',
       deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认14天后
       color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // 随机颜色
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      members: [], // 空的成员数组
+      taskCount: tasksToSave.length // 设置正确的任务计数
     };
+
+    console.log('=== 主页创建新项目 ===');
+    console.log('项目详情:', newProject);
+    console.log('任务数量:', tasksToSave.length);
     
     // 将任务关联到新项目
     const tasksWithProject = tasksToSave.map(task => ({
@@ -131,14 +146,25 @@ export default function LandingPage() {
     // 获取现有数据
     const existingTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    
+
+    console.log('保存前的现有数据:');
+    console.log('- 现有任务数量:', existingTasks.length);
+    console.log('- 现有项目数量:', existingProjects.length);
+
     // 合并数据
     const updatedTasks = [...existingTasks, ...tasksWithProject];
     const updatedProjects = [...existingProjects, newProject];
-    
+
+    console.log('保存后的更新数据:');
+    console.log('- 更新后任务数量:', updatedTasks.length);
+    console.log('- 更新后项目数量:', updatedProjects.length);
+    console.log('- 新项目ID:', newProject.id);
+
     // 保存到本地存储
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     localStorage.setItem('projects', JSON.stringify(updatedProjects));
+
+    console.log('数据已保存到本地存储');
     
     // 关闭预览对话框
     setShowTaskPreview(false);
@@ -240,16 +266,15 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transition-all hover:scale-105 hover:shadow-lg">
-                Get Started
-              </Button>
-              <Button size="lg" variant="outline" className="text-base px-8 bg-transparent transition-all hover:bg-accent/50">
-                Watch Demo
-              </Button>
+              <Link href="/" passHref>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transition-all hover:scale-105 hover:shadow-lg">
+                  Get Started
+                </Button>
+              </Link>
             </div>
 
             <p className="text-sm text-muted-foreground mt-6">
-              Free plan includes 3 projects • No credit card required
+              Free plan includes Generate Plan • No login required • Upgrade for advanced features
             </p>
           </div>
         </div>
@@ -413,7 +438,7 @@ export default function LandingPage() {
                   </li>
                 </ul>
               <Button variant="outline" className="w-full bg-transparent hover:bg-card/20 transition-colors">
-                Get Started
+                Get Started - Free
               </Button>
             </div>
 
@@ -427,6 +452,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-bold text-foreground">$6</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
+                <div className="mt-1 text-accent font-medium">Save: $65/year</div>
               </div>
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
@@ -458,7 +484,18 @@ export default function LandingPage() {
                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">Custom integrations</span>
                   </li>
                 </ul>
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Upgrade to Pro</Button>
+              <Button
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    login()
+                  } else {
+                    alert('恭喜！您已成功升级到专业版！')
+                  }
+                }}
+              >
+                {isAuthenticated ? 'Manage Subscription' : 'Upgrade to Pro'}
+              </Button>
             </div>
           </div>
         </div>
