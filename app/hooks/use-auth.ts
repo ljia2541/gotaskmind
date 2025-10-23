@@ -18,32 +18,19 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 检查用户会话
+  // 检查用户会话 - 已移除测试用户支持
   const checkAuth = useCallback(() => {
     try {
-      const sessionCookie = document.cookie
-        .split('; ') 
-        .find(row => row.startsWith('user_session='));
-      
-      if (sessionCookie) {
-        // 提取并解码cookie值
-        const sessionStr = decodeURIComponent(sessionCookie.split('=')[1]);
-        const session = JSON.parse(sessionStr);
-        
-        // 检查会话是否过期
-        if (session.expires && new Date(session.expires) > new Date()) {
-          setUser({
-            email: session.email,
-            name: session.name,
-            picture: session.picture
-          });
-        } else {
-          // 会话过期，清除cookie
-          logout();
-        }
+      // 清除可能存在的测试用户cookie
+      if (document.cookie.includes('user_session=')) {
+        document.cookie = 'user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+        console.log('已清除用户会话cookie');
       }
+      
+      // 不再自动设置用户，需要真实登录
+      setUser(null);
     } catch (error) {
-      console.error('解析用户会话失败:', error);
+      console.error('检查用户会话失败:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -76,48 +63,18 @@ export function useAuth() {
     }
   }, []);
 
-  // 模拟登录函数，用于测试
+  // 已移除模拟登录函数，不再使用测试用户
   const mockLogin = useCallback(() => {
-    try {
-      // 创建模拟用户
-      const mockUser: User = {
-        email: 'test@example.com',
-        name: '测试用户',
-        picture: '/placeholder-user.jpg'
-      };
-      
-      // 设置用户状态
-      setUser(mockUser);
-      
-      // 创建会话对象
-      const session = {
-        email: mockUser.email,
-        name: mockUser.name,
-        picture: mockUser.picture,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24小时后过期
-      };
-      
-      // 设置cookie
-      document.cookie = `user_session=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=86400`;
-      
-      // 在localStorage中更新认证状态
-      localStorage.setItem('auth_state', JSON.stringify({ isAuthenticated: true }));
-
-      // 不重新加载页面，让React状态管理更新
-      console.log('模拟登录完成，用户状态已更新');
-    } catch (error) {
-      console.error('模拟登录失败:', error);
-    }
+    console.log('模拟登录已禁用');
+    // 保留函数以避免破坏引用依赖，但不再设置测试用户
   }, []);
   
-  // 登录函数，默认使用模拟登录
+  // 登录函数，已移除自动模拟登录
   const login = useCallback(() => {
-    // 使用模拟登录进行测试
-    mockLogin();
-    
-    // 如果需要真实登录，可以取消下面这行的注释
-    // window.location.href = '/api/auth/google';
-  }, [mockLogin]);
+    // 已移除自动模拟登录
+    // 如果需要真实登录，可以使用以下API
+    window.location.href = '/api/auth/google';
+  }, []);
 
   // 组件挂载时检查认证状态
   useEffect(() => {

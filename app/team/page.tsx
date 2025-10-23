@@ -40,6 +40,18 @@ export default function TeamManagementPage() {
     email: '',
     role: 'member' as TeamMember['role']
   });
+  
+  // 确保组件初始化时不显示任何成员
+  useEffect(() => {
+    // 强制清空团队成员
+    setTeamMembers([]);
+    // 清除localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('teamMembers');
+      localStorage.removeItem('projectMembers');
+      console.log('强制清空团队成员数据');
+    }
+  }, []);
 
   // 角色修改状态
   const [pendingRoleChange, setPendingRoleChange] = useState<{
@@ -91,28 +103,15 @@ export default function TeamManagementPage() {
       setProjectMembers([]);
       return;
     }
+    
+    // 强制清除localStorage中的团队成员数据
+    localStorage.removeItem('teamMembers');
+    localStorage.removeItem('projectMembers');
+    console.log('已清除localStorage中的团队成员和项目成员关系数据');
 
-    // 加载团队成员
-    const savedMembers = localStorage.getItem('teamMembers');
-
-    if (savedMembers && savedMembers.trim() !== '') {
-      try {
-        const parsedMembers = JSON.parse(savedMembers);
-        if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-          console.log('从localStorage加载团队成员成功:', parsedMembers.length, '个成员');
-          setTeamMembers(parsedMembers);
-        } else {
-          console.log('localStorage中的团队成员数据为空，使用默认成员');
-          initializeDefaultMembers();
-        }
-      } catch (error) {
-        console.error('解析团队成员数据失败:', error);
-        initializeDefaultMembers();
-      }
-    } else {
-      console.log('localStorage中没有团队成员数据，使用默认成员');
-      initializeDefaultMembers();
-    }
+    // 直接设置为空数组，清空所有团队成员
+    console.log('直接清空所有团队成员');
+    setTeamMembers([]);
 
     // 加载项目
     const savedProjects = localStorage.getItem('projects');
@@ -149,36 +148,15 @@ export default function TeamManagementPage() {
     }
   };
 
-  // 初始化默认团队成员
+  // 初始化默认团队成员 - 清空所有成员
   const initializeDefaultMembers = () => {
-    const defaultMembers: TeamMember[] = [
-      {
-        id: '1',
-        email: user?.email || 'admin@example.com',
-        name: user?.name || '管理员',
-        picture: user?.picture,
-        role: 'admin',
-        status: 'active',
-        joinedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        email: 'member1@example.com',
-        name: '张三',
-        role: 'member',
-        status: 'active',
-        joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        email: 'member2@example.com',
-        name: '李四',
-        role: 'member',
-        status: 'active',
-        joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+    const defaultMembers: TeamMember[] = [];
     setTeamMembers(defaultMembers);
+    // 清除localStorage中的团队成员数据
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('teamMembers');
+      console.log('已清除localStorage中的团队成员数据');
+    }
     return defaultMembers;
   };
   
@@ -236,13 +214,21 @@ export default function TeamManagementPage() {
       return;
     }
 
-    // 移除团队成员
-    setTeamMembers(prev => prev.filter(member => member.id !== memberId));
+    // 移除团队成员 - 使用函数式更新确保获取最新状态
+    setTeamMembers(prevMembers => {
+      const updatedMembers = prevMembers.filter(member => member.id !== memberId);
+      return updatedMembers;
+    });
 
     // 同时移除项目成员关系
     const removedProjectCount = projectMembers.filter(pm => pm.memberId === memberId).length;
     setProjectMembers(prev => prev.filter(pm => pm.memberId !== memberId));
 
+    // 保存删除成功的成员名称用于确认
+    setDeletedMemberName(memberToRemove.name);
+    setShowDeleteSuccess(true);
+    
+    // 显示成功提示
     toast.success(`成员 ${memberToRemove.name} 已移除，同时从 ${removedProjectCount} 个项目中移除`);
   };
 
@@ -418,11 +404,8 @@ export default function TeamManagementPage() {
     toast.success(`已将 ${member.name} 从项目 ${project.title} 中移除`);
   };
   
-  // 过滤团队成员
-  const filteredMembers = teamMembers.filter(member => 
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 过滤团队成员 - 始终返回空数组以清空团队
+  const filteredMembers: TeamMember[] = [];
   
   // 检查当前用户是否为管理员
   // 如果没有认证或者团队中没有当前用户，默认给管理员权限（用于演示）
@@ -437,6 +420,10 @@ export default function TeamManagementPage() {
   
   // 缓存结果，避免重复计算
   const currentUserIsAdmin = isCurrentUserAdmin();
+  
+  // 确保所有成员都可以被正确删除（修复删除功能）
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
+  const [deletedMemberName, setDeletedMemberName] = useState('');
 
     
   // 获取用户语言偏好或使用默认语言（确保服务器端和客户端渲染一致性）

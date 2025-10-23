@@ -449,10 +449,10 @@ export default function LandingPage() {
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">Pro</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-foreground">$6</span>
+                  <span className="text-4xl font-bold text-foreground">$8</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
-                <div className="mt-1 text-accent font-medium">Save: $65/year</div>
+                <div className="mt-1 text-accent font-medium">Annual Discount: $88/year</div>
               </div>
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
@@ -590,12 +590,11 @@ export default function LandingPage() {
               Join thousands of teams already using GoTaskMind's AI-driven platform for smarter planning.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
-                Start Free
-              </Button>
-              <Button size="lg" variant="outline" className="text-base px-8 bg-transparent transform hover:scale-105 transition-all duration-300 hover:bg-accent/50">
-                Schedule Demo
-              </Button>
+              <Link href="/" passHref>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                  Start Free
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -696,3 +695,4 @@ export default function LandingPage() {
     </div>
   )
 }
+

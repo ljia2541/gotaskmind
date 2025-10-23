@@ -106,7 +106,7 @@ export default function AnalyticsPage() {
     }
   };
 
-  // 尝试模拟登录
+  // 尝试模拟登录 - 已移除测试用户
   const attemptMockLogin = async () => {
     try {
       // 确保在客户端环境中运行
@@ -118,45 +118,12 @@ export default function AnalyticsPage() {
         return;
       }
 
-      // 使用useAuth中的模拟登录逻辑
-      const mockUser = {
-        email: 'test@example.com',
-        name: '测试用户',
-        picture: '/placeholder-user.jpg'
-      };
-
-      // 创建会话对象
-      const session = {
-        email: mockUser.email,
-        name: mockUser.name,
-        picture: mockUser.picture,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24小时后过期
-      };
-
-      // 设置cookie
-      document.cookie = `user_session=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=86400`;
-
-      console.log('模拟登录成功，重新检查认证状态...');
-
-      // 重新检查认证状态
-      setTimeout(async () => {
-        const response = await fetch('/api/auth/session', {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        if (response.ok) {
-          setAuthenticated(true);
-          setError('');
-          // 认证成功后加载数据
-          await loadTasks();
-          await loadAnalyticsData();
-        } else {
-          setError(translations.errors.notAuthenticated);
-        }
-      }, 100);
+      // 移除测试用户设置
+      console.log('已移除测试用户，不再进行模拟登录');
+      setError(translations.errors.notAuthenticated);
+      setAuthenticated(false);
     } catch (error) {
-      console.error('模拟登录失败:', error);
+      console.error('登录检查失败:', error);
       setError(translations.errors.authCheckFailed);
       setAuthenticated(false);
     }
