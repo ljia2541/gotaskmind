@@ -2,12 +2,13 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Zap, Users, BarChart3, Check, Loader2, Menu, X, CheckCircle2, Circle, Plus, Trash2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Logo } from "@/components/logo"
 import { DecorativeElements } from "@/components/decorative-elements"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { AuthNavigation } from "@/app/components/auth-navigation"
 import { useAuth } from "@/app/hooks/use-auth"
@@ -23,18 +24,26 @@ const examplePrompts = [
 ]
 
 export default function LandingPage() {
-  const { login, isAuthenticated } = useAuth()
-  // 获取用户语言偏好或使用默认语言（确保服务器端和客户端渲染一致性）
+  const { loginWithGoogle, isAuthenticated, isPro, subscription, user, debugSubscriptionStatus, forceRefreshSubscription, manualActivatePro, useMemoryStore, updateSubscription } = useAuth()
+  // 获取用户语言偏好，确保服务器端和客户端渲染一致性
   const defaultLanguage = 'zh'; // 默认使用中文
-  const userLanguage = typeof window !== 'undefined' ? (LanguageService.getUserLanguage() || defaultLanguage) : defaultLanguage;
-  // 获取对应的翻译文本
-  const translations = analyticsTranslations[userLanguage] || analyticsTranslations[defaultLanguage];
-  const [isLoading, setIsLoading] = useState(false)
+  const [userLanguage, setUserLanguage] = useState(defaultLanguage);
+  const [translations, setTranslations] = useState(analyticsTranslations[defaultLanguage]);
+
+  // 在客户端加载后更新语言偏好
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const clientLanguage = LanguageService.getUserLanguage() || defaultLanguage;
+      setUserLanguage(clientLanguage);
+      setTranslations(analyticsTranslations[clientLanguage] || analyticsTranslations[defaultLanguage]);
+    }
+  }, []);
   const [currentExample, setCurrentExample] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   // AI功能相关状态
   const [projectPrompt, setProjectPrompt] = useState('')
   const [generatedTasks, setGeneratedTasks] = useState<any[]>([])
+  const [projectTitle, setProjectTitle] = useState('')
   const [showTaskPreview, setShowTaskPreview] = useState(false)
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -44,10 +53,85 @@ export default function LandingPage() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // 浏览器检测工具函数
+  const detectBrowser = useCallback(() => {
+    const userAgent = navigator.userAgent.toLowerCase()
+
+    if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+      return { name: 'Chrome', type: 'standard', isChinese: false }
+    } else if (userAgent.includes('firefox')) {
+      return { name: 'Firefox', type: 'standard', isChinese: false }
+    } else if (userAgent.includes('edg')) {
+      return { name: 'Edge', type: 'standard', isChinese: false }
+    } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+      return { name: 'Safari', type: 'standard', isChinese: false }
+    } else if (userAgent.includes('qihoo') || userAgent.includes('360se')) {
+      return { name: '360浏览器', type: 'chinese', isChinese: true }
+    } else if (userAgent.includes('qqbrowser')) {
+      return { name: 'QQ浏览器', type: 'chinese', isChinese: true }
+    } else if (userAgent.includes('se 2.x') || userAgent.includes('sogou')) {
+      return { name: '搜狗浏览器', type: 'chinese', isChinese: true }
+    } else if (userAgent.includes('ucbrowser')) {
+      return { name: 'UC浏览器', type: 'chinese', isChinese: true }
+    } else if (userAgent.includes('baidu')) {
+      return { name: '百度浏览器', type: 'chinese', isChinese: true }
+    } else {
+      return { name: '未知浏览器', type: 'unknown', isChinese: false }
+    }
+  }, [])
+
+  // 组件挂载后延迟刷新订阅状态，避免Hydration错误
+  useEffect(() => {
+    // 确保在客户端执行
+    if (typeof window === 'undefined') return
+
+    const timer = setTimeout(() => {
+      if (isAuthenticated && user) {
+        const browserInfo = detectBrowser()
+        console.log('🌐 浏览器检测:', browserInfo)
+
+        if (browserInfo.type === 'chinese') {
+          console.log('🇨🇳 检测到中国本土浏览器，使用增强的订阅同步机制')
+
+          // 针对中国本土浏览器，延迟执行状态同步
+          setTimeout(() => {
+            console.log('🔄 中国浏览器专用同步')
+            forceRefreshSubscription()
+          }, 1000)
+        }
+      }
+    }, 2000) // 增加延迟时间确保页面完全加载
+
+    return () => clearTimeout(timer)
+  }, [isAuthenticated, user, forceRefreshSubscription])
+
+  // 调试功能 - 键盘快捷键 (Shift+Ctrl+D)
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Shift + Ctrl + D
+      if (event.shiftKey && event.ctrlKey && event.key === 'D') {
+        event.preventDefault()
+        console.log('🔍 调试：检查订阅状态')
+        debugSubscriptionStatus()
+      }
+      // Shift + Ctrl + R
+      else if (event.shiftKey && event.ctrlKey && event.key === 'R') {
+        event.preventDefault()
+        console.log('🔄 调试：强制刷新订阅状态')
+        forceRefreshSubscription()
+      }
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      window.addEventListener('keydown', handleKeyPress)
+      return () => window.removeEventListener('keydown', handleKeyPress)
+    }
+  }, [debugSubscriptionStatus, forceRefreshSubscription])
 
   /**
    * 处理AI任务生成
@@ -72,15 +156,25 @@ export default function LandingPage() {
       
       const data = await response.json();
       if (data.success) {
-        // 为任务添加ID和必要属性，但不立即保存
+        // 设置项目标题
+        setProjectTitle(data.project_title || projectPrompt.trim());
+
+        // 为任务添加必要属性，但不立即保存
         const tasksWithIds = data.tasks.map((task: any, index: number) => ({
           ...task,
-          id: `ai-generated-${Date.now()}-${index}`,
+          // 保留原有的AI生成的ID，如果不存在则创建一个
+          id: task.id || `ai-generated-${Date.now()}-${index}`,
           status: 'todo',
           createdAt: new Date().toISOString(),
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 默认7天后
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认7天后
+          // 确保estimatedHours是数字
+          estimatedHours: task.estimated_hours || task.estimatedHours || 2,
+          // 确保dependencies是数组
+          dependencies: task.dependencies || [],
+          // 保留原有的energy_level
+          energyLevel: task.energy_level || task.energyLevel || 'medium'
         }));
-        
+
         // 设置生成的任务
         setGeneratedTasks(tasksWithIds);
         // 默认选中所有任务
@@ -118,12 +212,11 @@ export default function LandingPage() {
       return;
     }
     
-    // 创建新项目 - 确保包含所有必要字段
-    const projectTitle = projectPrompt.trim() || 'AI生成项目';
+    // 创建新项目 - 使用AI生成的项目标题
     const newProject = {
       id: `project-${Date.now()}`,
-      title: projectTitle,
-      description: `这是由AI根据描述"${projectTitle}"生成的项目`,
+      title: projectTitle.trim() || projectPrompt.trim() || 'AI生成项目',
+      description: `这是由AI根据描述"${projectPrompt.trim()}"生成的项目，包含${tasksToSave.length}个任务`,
       status: 'planning',
       deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认14天后
       color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // 随机颜色
@@ -213,15 +306,81 @@ export default function LandingPage() {
         <DecorativeElements />
         <div className="container mx-auto px-4 py-20 md:py-28 lg:py-32 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm mb-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
-              <Sparkles className="w-4 h-4" />
-              <span>AI-Powered Project Planning</span>
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm animate-in fade-in slide-in-from-bottom-3 duration-500">
+                <Sparkles className="w-4 h-4" />
+                <span>AI-Powered Project Planning</span>
+              </div>
+
+              {isAuthenticated && (
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm animate-in fade-in slide-in-from-bottom-3 duration-700 group ${
+                  isPro
+                    ? 'bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                    : 'bg-gray-100 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300'
+                }`}>
+                  <Check className="w-4 h-4" />
+                  <span>
+                    {isPro ? 'Pro Plan Active' : 'Free Plan'}
+                    {isPro && subscription && ` • ${subscription.planId === 'pro-annual' ? 'Annual' : 'Monthly'}`}
+                    {useMemoryStore && (
+                      <span className="ml-1 text-xs opacity-70">🧠</span>
+                    )}
+                  </span>
+                  {/* 开发环境下的调试按钮 */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <>
+                      <button
+                        onClick={() => {
+                          debugSubscriptionStatus();
+                          console.log('🔍 已调用调试函数，查看控制台输出');
+                        }}
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
+                        title="调试订阅状态 (Shift+Ctrl+D)"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => forceRefreshSubscription()}
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
+                        title="刷新订阅状态 (Shift+Ctrl+R)"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                      {/* 如果显示Free Plan但用户已经付费，显示紧急修复按钮 */}
+                      {!isPro && (
+                        <button
+                          onClick={async () => {
+                            console.log('🚨 紧急修复：手动激活Pro订阅');
+                            const success = await manualActivatePro('pro-monthly');
+                            if (success) {
+                              alert('Pro订阅激活成功！页面将自动刷新。');
+                              setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                              alert('激活失败，请查看控制台错误信息。');
+                            }
+                          }}
+                          className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110 bg-red-500 text-white rounded-full p-0.5"
+                          title="紧急修复：手动激活Pro月度订阅"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 text-balance leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
               Transform Ideas into Actionable Plans
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 md:mb-12 text-pretty max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-900">
-              Describe your project in natural language. Our AI instantly generates detailed task breakdowns, timelines, and team workflows.
+              An intelligent productivity companion for individual users that understands personal goals and work habits through natural language interaction, automatically generating personalized task plans.
             </p>
 
             {/* AI Input Demo */}
@@ -232,12 +391,13 @@ export default function LandingPage() {
                     <Sparkles className="w-5 h-5 text-accent" />
                   </div>
                   <div className="flex-1">
-                    <Input
+                    <Textarea
                       placeholder={examplePrompts[currentExample]}
                       value={projectPrompt}
                       onChange={(e) => setProjectPrompt(e.target.value)}
-                      className="bg-background border-border text-foreground placeholder:text-muted-foreground text-base h-12 cursor-text transition-all hover:border-primary/50"
+                      className="bg-background border-border text-foreground placeholder:text-muted-foreground text-base cursor-text transition-all hover:border-primary/50 resize-none min-h-[80px]"
                       aria-label="项目描述输入"
+                      rows={3}
                     />
                   </div>
                 </div>
@@ -245,9 +405,9 @@ export default function LandingPage() {
                   <span className="text-xs text-muted-foreground">Enter your project description or use the placeholder examples</span>
                   <Button
                     onClick={handleGenerate}
-                    disabled={isLoading}
+                    disabled={isGenerating}
                     className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
-                    aria-label={isLoading ? "Generating..." : "Generate plan"}
+                    aria-label={isGenerating ? "Generating..." : "Generate plan"}
                   >
                     {isGenerating ? (
                       <>
@@ -287,7 +447,7 @@ export default function LandingPage() {
               <div className="order-2 md:order-1">
                 <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">AI Understands Your Vision</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  Our advanced AI models analyze your project requirements to generate intelligent, context-aware plans that adapt to your team's workflow.
+                  Our intelligent AI models deeply analyze your project vision to generate personalized plans that truly understand your individual work style, making the planning process natural and efficient.
                 </p>
                 <ul className="space-y-3">
                     <li className="flex items-start gap-3 group">
@@ -306,7 +466,7 @@ export default function LandingPage() {
                       <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-accent/30 transition-colors">
                         <Sparkles className="w-3 h-3 text-accent" />
                       </div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Continuous learning of team work patterns</span>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Continuous personalized adaptation</span>
                     </li>
                   </ul>
               </div>
@@ -354,9 +514,9 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                 <Users className="w-6 h-6 text-accent" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">Team Collaboration</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Personalized Workflow Adaptation</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Seamlessly assign tasks, track progress, and communicate with your team in real-time through built-in collaboration tools.
+                The system continuously learns your work rhythm and habits, intelligently adjusting task scheduling to match your personal energy cycles and time preferences.
               </p>
             </div>
 
@@ -398,7 +558,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="pricing" className="py-20 md:py-24">
+      <section id="pricing" className="py-20 md:py-24 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance">
@@ -421,11 +581,11 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Up to 3 projects</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">3 projects per month</span>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">20 tasks per project</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">10 tasks per project</span>
                   </li>
 
                   <li className="flex items-start gap-3 group">
@@ -457,16 +617,13 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">500 projects</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Unlimited projects</span>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">500 tasks</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Unlimited tasks</span>
                   </li>
-                  <li className="flex items-start gap-3 group">
-                    <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">500 team members</span>
-                  </li>
+
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">Advanced AI deep insights</span>
@@ -486,15 +643,11 @@ export default function LandingPage() {
                 </ul>
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    login()
-                  } else {
-                    alert('恭喜！您已成功升级到专业版！')
-                  }
-                }}
+                asChild
               >
-                {isAuthenticated ? 'Manage Subscription' : 'Upgrade to Pro'}
+                <Link href="/pricing">
+                  View All Plans
+                </Link>
               </Button>
             </div>
           </div>
@@ -505,10 +658,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance">
-              Trusted by Teams Worldwide
+              Trusted by individual efficiency seekers worldwide
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed">
-              See how teams transform their workflows with AI-driven planning.
+              Learn how individual users are transforming their work through AI-driven intelligent planning.
             </p>
           </div>
 
@@ -519,13 +672,13 @@ export default function LandingPage() {
                     <span className="text-lg font-bold text-accent">Tech</span>
                   </div>
                   <div>
-                    <div className="font-semibold text-foreground">Tech Startup</div>
+                    <div className="font-semibold text-foreground">💻 Solo Developer</div>
                     <div className="text-sm text-muted-foreground">San Francisco</div>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "GoTaskMind reduced our project planning time by 40% and improved team collaboration by 35%. 
-                  The AI recommendations are remarkably accurate."
+                  "GoTaskMind reduced my project planning time by 70%, allowing me to focus on core development work. 
+                  The AI-generated plans precisely match my tech stack and work habits."
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -540,13 +693,13 @@ export default function LandingPage() {
                     <span className="text-lg font-bold text-accent">Mktg</span>
                   </div>
                   <div>
-                    <div className="font-semibold text-foreground">Marketing Agency</div>
+                    <div className="font-semibold text-foreground">✍️ Freelance Writer</div>
                     <div className="text-sm text-muted-foreground">New York</div>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "Managing multiple client projects has become effortless. The AI understands our workflow patterns and 
-                  suggests optimal task sequences. Game-changer!"
+                  "Managing multiple writing projects has become effortless. The AI understands my creative process and 
+                  intelligently arranges the optimal sequence for research, outlining, writing, and proofreading. It has truly transformed my work!"
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -561,13 +714,12 @@ export default function LandingPage() {
                     <span className="text-lg font-bold text-accent">Prod</span>
                   </div>
                   <div>
-                    <div className="font-semibold text-foreground">Product Team</div>
+                    <div className="font-semibold text-foreground">🎓 Graduate Student</div>
                     <div className="text-sm text-muted-foreground">London</div>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "From concept to launch in record time. The smart task breakdown helped us identify dependencies 
-                  we would have otherwise missed. Highly recommended!"
+                  "As an independent developer, GoTaskMind serves as my personal project management assistant. The intelligent time estimation allows me to commit delivery dates to clients more accurately, significantly improving client satisfaction."
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -584,10 +736,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700">
-              Ready to Transform How You Work?
+              🎯 Start your intelligent planning journey today
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 text-pretty leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-900">
-              Join thousands of teams already using GoTaskMind's AI-driven platform for smarter planning.
+              Experience how AI-driven intelligent planning with GoTaskMind can transform your work and life.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000">
               <Link href="/" passHref>
@@ -621,11 +773,11 @@ export default function LandingPage() {
           
           <div className="flex-1 overflow-auto p-1">
             {generatedTasks.map((task, index) => (
-              <div 
-                key={task.id} 
-                className={`p-3 rounded-lg mb-2 border ${selectedTasks.includes(task.id) 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50 hover:bg-accent/50'} 
+              <div
+                key={task.id}
+                className={`p-3 rounded-lg mb-2 border ${selectedTasks.includes(task.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50 hover:bg-accent/50'}
                   transition-all cursor-pointer`}
                 onClick={() => handleTaskSelect(task.id)}
               >
@@ -638,28 +790,62 @@ export default function LandingPage() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium text-foreground">{task.title}</h4>
+                    <div className="flex items-start justify-between">
+                      <h4 className="font-medium text-foreground">{task.title}</h4>
+                      <span className="text-xs text-muted-foreground ml-2 font-mono bg-muted px-1 rounded">
+                        {task.id}
+                      </span>
+                    </div>
                     {task.description && (
                       <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                     )}
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high' 
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' 
-                        : task.priority === 'medium' 
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' 
+                      {/* 优先级标签 */}
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                        : task.priority === 'medium'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'}`}>
                         {task.priority === 'high' ? '高优先级' : task.priority === 'medium' ? '中优先级' : '低优先级'}
                       </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${task.category === 'work' 
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100' 
-                        : task.category === 'personal' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                        : task.category === 'learning' 
-                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100' 
+                      {/* 分类标签 */}
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${task.category === 'work'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                        : task.category === 'personal'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        : task.category === 'learning'
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'}`}>
                         {task.category === 'work' ? '工作' : task.category === 'personal' ? '个人' : task.category === 'learning' ? '学习' : '其他'}
                       </span>
+                      {/* 时间预估标签 */}
+                      {task.estimatedHours && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                          {task.estimatedHours}h
+                        </span>
+                      )}
+                      {/* 能量级别标签 */}
+                      {task.energyLevel && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          task.energyLevel === 'high'
+                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                            : task.energyLevel === 'medium'
+                            ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-100'
+                            : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100'
+                        }`}>
+                          {task.energyLevel === 'high' ? '⚡ 高能量' : task.energyLevel === 'medium' ? '🔋 中能量' : '🌙 低能量'}
+                        </span>
+                      )}
                     </div>
+                    {/* 依赖关系显示 */}
+                    {task.dependencies && task.dependencies.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs text-muted-foreground">依赖: </span>
+                        <span className="text-xs font-mono bg-muted px-1 rounded">
+                          {task.dependencies.join(', ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -679,16 +865,33 @@ export default function LandingPage() {
       </Dialog>
 
       {/* Footer */}
-      <footer className="py-12 bg-background">
+      <footer className="py-12 bg-background border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Logo className="w-6 h-6" />
               <span className="font-semibold text-foreground">GoTaskMind</span>
             </div>
-            <p className="text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground">
-              © 2025 GoTaskMind. Empowering teams with AI for the future of work.
-            </p>
+
+            <div className="flex flex-col md:flex-row items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/terms"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+              </div>
+              <p>
+                © 2025 GoTaskMind. Focus on creation, and let AI handle the planning.
+              </p>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,57 +1,158 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
- * 服务条款页面
+ * Terms of Service Page
  */
 export default function TermsOfService() {
   return (
     <div className="container mx-auto px-4 py-12">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">服务条款</CardTitle>
+          <CardTitle className="text-2xl">Terms of Service</CardTitle>
         </CardHeader>
         <CardContent className="prose max-w-none">
-          <p>最后更新日期：2024年10月</p>
-          
-          <h2>1. 接受条款</h2>
-          <p>通过访问或使用 GoTaskMind 网站和服务，您同意遵守本服务条款。如果您不同意本条款的任何部分，您不得使用我们的服务。</p>
-          
-          <h2>2. 账户创建</h2>
+          <p>Last updated: October 2024</p>
+
+          <h2>1. Acceptance of Terms</h2>
+          <p>By accessing or using the GoTaskMind website and services, you agree to be bound by these Terms of Service. If you do not agree to any part of these terms, you may not use our services.</p>
+
+          <h2>2. Account Creation</h2>
           <ul>
-            <li>您必须年满 13 岁才能使用我们的服务</li>
-            <li>您需要使用 Google 账号登录以访问我们的服务</li>
-            <li>您同意提供准确、完整和最新的信息</li>
+            <li>You must be at least 13 years old to use our services</li>
+            <li>You need to use a Google account to log in to access our services</li>
+            <li>You agree to provide accurate, complete, and current information</li>
           </ul>
-          
-          <h2>3. 用户行为</h2>
-          <p>当使用我们的服务时，您同意不会：</p>
+
+          <h2>3. Paid Services</h2>
+          <h3>3.1 Subscription Plans</h3>
+          <p>GoTaskMind offers the following subscription plans:</p>
           <ul>
-            <li>违反任何适用的法律或法规</li>
-            <li>侵犯他人的知识产权</li>
-            <li>上传或分享恶意软件、病毒或其他有害内容</li>
-            <li>干扰或破坏服务的正常运行</li>
+            <li><strong>Free Plan:</strong> Free to use with basic features</li>
+            <li><strong>Pro Plan:</strong> Paid subscription with advanced features and unlimited usage</li>
           </ul>
-          
-          <h2>4. 知识产权</h2>
-          <p>GoTaskMind 的所有内容、功能和功能，包括但不限于文本、图形、徽标、图标、图像、音频剪辑、数字下载、数据汇编和软件，均为 GoTaskMind 或其许可方的财产，并受版权、商标和其他知识产权法律保护。</p>
-          
-          <h2>5. 服务修改</h2>
-          <p>我们保留随时修改或中断服务的权利，无需事先通知。我们不对您或第三方因服务修改、暂停或终止而导致的任何损失负责。</p>
-          
-          <h2>6. 免责声明</h2>
-          <p>我们的服务按"原样"和"可用"的基础提供，不附带任何形式的保证，无论是明示还是暗示。我们不保证服务将无中断、及时、安全或无错误。</p>
-          
-          <h2>7. 责任限制</h2>
-          <p>在法律允许的最大范围内，GoTaskMind 及其管理人员、员工、合作伙伴、代理人、供应商或关联公司不对任何间接、偶然、特殊、后果性或惩罚性损害负责。</p>
-          
-          <h2>8. 条款修改</h2>
-          <p>我们保留随时修改本服务条款的权利。当我们进行重大变更时，我们会通过在我们的网站上发布新的条款来通知您。您继续使用我们的服务将被视为接受修改后的条款。</p>
-          
-          <h2>9. 适用法律</h2>
-          <p>本条款受中华人民共和国法律管辖，不考虑其法律冲突规定。</p>
-          
-          <h2>10. 联系我们</h2>
-          <p>如果您对本服务条款有任何问题或疑虑，请联系我们：terms@gotaskmind.com</p>
+
+          <h3>3.2 Payment Terms</h3>
+          <ul>
+            <li>All payments are processed through Creem (our payment service provider)</li>
+            <li>You agree to provide accurate and complete payment information to Creem</li>
+            <li>You authorize Creem to charge your payment method according to your selected subscription plan</li>
+            <li>Prices may change, but we will provide 30 days notice</li>
+            <li><strong>International Payments:</strong> We support multiple currencies and payment methods depending on your region</li>
+            <li><strong>Taxes:</strong> You are responsible for complying with local tax regulations, including but not limited to VAT, sales tax, etc.</li>
+          </ul>
+
+          <h3>3.3 Refund Policy</h3>
+          <p>We offer a satisfaction guarantee with the following conditions:</p>
+
+          <h4>Eligibility Requirements</h4>
+          <ul>
+            <li><strong>30-Day Window:</strong> Refund requests must be submitted within 30 days of purchase</li>
+            <li><strong>First-Time Purchase:</strong> Refund guarantee applies only to first-time Pro plan purchases</li>
+            <li><strong>Active Usage Proof:</strong> Customer must demonstrate they have actively used the service by:</li>
+            <ul>
+              <li>Creating at least 5 projects or tasks</li>
+              <li>Using AI task generation feature at least 3 times</li>
+              <li>Providing specific feedback about service limitations</li>
+            </ul>
+            <li><strong>Support Contact:</strong> Customer must contact our support team first regarding any issues</li>
+          </ul>
+
+          <h4>Non-Refundable Situations</h4>
+          <ul>
+            <li>Annual plans discounted more than 20% are non-refundable</li>
+            <li>After 30 days from purchase date</li>
+            <li>Multiple account registrations to abuse the refund policy</li>
+            <li>Violation of our Terms of Service</li>
+            <li>Requests from resellers or bulk purchases</li>
+          </ul>
+
+          <h4>Refund Process</h4>
+          <ul>
+            <li>Submit refund request through our support portal</li>
+            <li>Provide detailed reason and usage evidence</li>
+            <li>Refunds processed within 5-7 business days after approval</li>
+            <li>Refunds issued to original payment method only</li>
+          </ul>
+
+          <h2>4. User Conduct</h2>
+          <p>When using our services, you agree not to:</p>
+          <ul>
+            <li>Violate any applicable laws or regulations</li>
+            <li>Infringe on others' intellectual property rights</li>
+            <li>Upload or share malicious software, viruses, or other harmful content</li>
+            <li>Interfere with or disrupt the normal operation of the service</li>
+            <li>Attempt to circumvent payment or abuse refund policies</li>
+          </ul>
+
+          <h2>5. Intellectual Property</h2>
+          <p>All content, features, and functionality of GoTaskMind, including but not limited to text, graphics, logos, icons, images, audio clips, digital downloads, data compilations, and software, are the property of GoTaskMind or its licensors and are protected by copyright, trademark, and other intellectual property laws.</p>
+
+          <h2>6. Service Modifications</h2>
+          <p>We reserve the right to modify or discontinue the service at any time without prior notice. We shall not be liable to you or any third party for any modification, suspension, or discontinuance of the service.</p>
+
+          <h2>7. Disclaimer</h2>
+          <p>Our service is provided on an "as is" and "as available" basis, without any warranties of any kind, whether express or implied. We do not guarantee that the service will be uninterrupted, timely, secure, or error-free.</p>
+
+          <h2>8. Limitation of Liability</h2>
+          <p>To the maximum extent permitted by law, GoTaskMind and its directors, employees, partners, agents, suppliers, or affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
+
+          <h2>9. Terms Modification</h2>
+          <p>We reserve the right to modify these Terms of Service at any time. When we make material changes, we will notify you by posting the updated terms on our website. Your continued use of the service will be deemed acceptance of the modified terms.</p>
+
+          <h2>10. International Services & Jurisdiction</h2>
+          <h3>10.1 Global Service</h3>
+          <p>GoTaskMind is a global service, and we provide services to users worldwide. Different regions may have different legal requirements, and we will strive to comply with applicable local laws.</p>
+
+          <h3>10.2 Governing Law</h3>
+          <p>These Terms of Service are governed by the following laws:</p>
+          <ul>
+            <li>For North America (US, Canada) users: Governed by the laws of the State of Delaware, USA</li>
+            <li>For European users: Governed by Irish law, in compliance with the EU General Data Protection Regulation (GDPR)</li>
+            <li>For Asia-Pacific users: Governed by Singapore law</li>
+            <li>For other regions: Governed by Swiss law (as a neutral legal jurisdiction)</li>
+          </ul>
+
+          <h3>10.3 Dispute Resolution</h3>
+          <p>We prioritize resolving disputes through friendly negotiation. If an agreement cannot be reached, disputes will be resolved through the following methods:</p>
+          <ul>
+            <li>First through online mediation or arbitration</li>
+            <li>Filing a lawsuit in a court of competent jurisdiction in the user's location</li>
+            <li>Or other dispute resolution mechanisms agreed upon by both parties</li>
+          </ul>
+
+          <h2>11. Cross-Border Services & Compliance</h2>
+          <h3>11.1 Service Availability</h3>
+          <p>GoTaskMind services are available in most countries and regions, but may be subject to local legal restrictions. We do not provide services in the following areas:</p>
+          <ul>
+            <li>Countries and regions subject to United Nations sanctions</li>
+            <li>Regions where services are prohibited by local laws</li>
+            <li>Regions where technical limitations prevent service delivery</li>
+          </ul>
+
+          <h3>11.2 Cross-Border Data Transfers</h3>
+          <p>Our services may involve cross-border data transfers:</p>
+          <ul>
+            <li>Data is stored on cloud servers that comply with international security standards</li>
+            <li>We employ appropriate legal mechanisms to ensure the legality of cross-border data transfers</li>
+            <li>EU user data is protected under GDPR</li>
+            <li>California users are protected under CCPA/CPRA</li>
+          </ul>
+
+          <h3>11.3 Language and Currency</h3>
+          <ul>
+            <li>The service supports multiple language interfaces</li>
+            <li>Pricing is based on USD, with support for multiple local currency payments</li>
+            <li>Exchange rates are determined in real-time by the payment service provider</li>
+          </ul>
+
+          <h2>12. Contact Us</h2>
+          <p>If you have any questions or concerns about these Terms of Service, please contact us:</p>
+          <ul>
+            <li><strong>Email:</strong> ljia2541@gmail.com</li>
+            <li><strong>Business Hours:</strong> Monday to Friday, 9:00-18:00 (UTC+8)</li>
+            <li><strong>Response Time:</strong> We will respond to your inquiry within 48 hours</li>
+            <li><strong>Supported Languages:</strong> English, Chinese</li>
+          </ul>
         </CardContent>
       </Card>
     </div>

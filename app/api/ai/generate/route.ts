@@ -37,13 +37,39 @@ export async function POST(request: NextRequest) {
     const generatedTasksJson = await aiService.generateTaskBreakdown(projectDescription);
     
     // 6. 解析生成的JSON字符串
-    let parsedTasks;
+    let parsedResponse;
     try {
-      parsedTasks = JSON.parse(generatedTasksJson);
-      
+      parsedResponse = JSON.parse(generatedTasksJson);
+
       // 验证解析后的数据格式
-      if (!parsedTasks.tasks || !Array.isArray(parsedTasks.tasks)) {
+      if (!parsedResponse.tasks || !Array.isArray(parsedResponse.tasks)) {
         throw new Error('生成的任务格式不正确');
+      }
+
+      // 验证每个任务的必要字段
+      for (const task of parsedResponse.tasks) {
+        if (!task.id || !task.title || !task.category || !task.priority || !task.energy_level) {
+          throw new Error('任务缺少必要字段');
+        }
+        // 验证新增字段
+        if (task.estimated_hours !== undefined && (typeof task.estimated_hours !== 'number' || task.estimated_hours <= 0)) {
+          throw new Error('任务预估时间必须是正数');
+        }
+        if (task.dependencies !== undefined && !Array.isArray(task.dependencies)) {
+          throw new Error('任务依赖必须是数组');
+        }
+        // 验证字段值的有效性 - category现在支持更多灵活的分类
+        const validCategories = ['work', 'personal', 'learning', 'other', 'planning', 'development', 'writing', 'creation', '规划', '学习', '开发', '写作', '创作'];
+        if (!validCategories.includes(task.category)) {
+          console.warn('任务分类可能不标准:', task.category);
+          // 不抛出错误，允许灵活分类
+        }
+        if (!['low', 'medium', 'high'].includes(task.priority)) {
+          throw new Error('任务优先级无效');
+        }
+        if (!['high', 'medium', 'low'].includes(task.energy_level)) {
+          throw new Error('任务能量级别无效');
+        }
       }
     } catch (parseError) {
       console.error('解析AI生成的任务失败:', parseError);
@@ -52,11 +78,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     // 7. 返回成功响应
     return NextResponse.json({
       success: true,
-      tasks: parsedTasks.tasks,
+      project_title: parsedResponse.project_title || '未命名项目',
+      tasks: parsedResponse.tasks,
       generatedAt: new Date().toISOString()
     });
     

@@ -2,43 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { BarChart3, Sparkles, RefreshCw, ChevronDown, Calendar, Menu, AlertCircle } from 'lucide-react';
+import { BarChart3, RefreshCw, Menu, AlertCircle } from 'lucide-react';
 import { Task } from '@/types/task';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 // 导入语言服务和翻译对象
 import { LanguageService, analyticsTranslations } from '@/app/lib/language-service';
-
-// 导入Recharts图表库组件
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, LineChart, Line } from 'recharts';
+import { PersonalWorkStats } from '@/components/personal-work-stats';
+import { useAuth } from '@/app/hooks/use-auth';
 
 export default function AnalyticsPage() {
+  // 认证状态
+  const { user, isAuthenticated, login, logout } = useAuth();
+
   // 状态管理
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState({
-    tasks: true,
-    analytics: true,
-    aiInsights: false
+    tasks: true
   });
-  const [aiInsights, setAiInsights] = useState<string>('');
-  const [showAllTasks, setShowAllTasks] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [error, setError] = useState<string>('');
-  const [authenticated, setAuthenticated] = useState(false);
   // 语言状态
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
   const [translations, setTranslations] = useState(analyticsTranslations.zh);
-  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    
   // 初始化加载数据
   useEffect(() => {
-    checkAuthentication();
     loadUserLanguage();
+    loadTasks();
   }, []);
 
   // 监听localStorage变化，实现数据同步
@@ -78,57 +71,8 @@ export default function AnalyticsPage() {
       setTranslations(analyticsTranslations[savedLanguage]);
     }
   };
-  
-  // 检查用户认证状态
-  const checkAuthentication = async () => {
-    try {
-      // 检查是否有会话cookie
-      const response = await fetch('/api/auth/session', {
-        method: 'GET',
-        credentials: 'include'
-      });
 
-      if (response.ok) {
-        setAuthenticated(true);
-        // 认证成功后加载数据
-        await loadTasks();
-        await loadAnalyticsData();
-      } else {
-        setAuthenticated(false);
-        // 如果没有认证，尝试模拟登录
-        console.log('用户未登录，尝试模拟登录...');
-        await attemptMockLogin();
-      }
-    } catch (error) {
-      console.error('认证检查失败:', error);
-      // 尝试模拟登录
-      await attemptMockLogin();
-    }
-  };
-
-  // 尝试模拟登录 - 已移除测试用户
-  const attemptMockLogin = async () => {
-    try {
-      // 确保在客户端环境中运行
-      if (typeof window === 'undefined') {
-        console.log('服务端环境，跳过模拟登录');
-        setAuthenticated(true);
-        await loadTasks();
-        await loadAnalyticsData();
-        return;
-      }
-
-      // 移除测试用户设置
-      console.log('已移除测试用户，不再进行模拟登录');
-      setError(translations.errors.notAuthenticated);
-      setAuthenticated(false);
-    } catch (error) {
-      console.error('登录检查失败:', error);
-      setError(translations.errors.authCheckFailed);
-      setAuthenticated(false);
-    }
-  };
-  
+    
   // 从localStorage加载任务数据
   const loadTasks = async () => {
     setIsLoading(prev => ({ ...prev, tasks: true }));
@@ -173,8 +117,6 @@ export default function AnalyticsPage() {
       setTranslations(analyticsTranslations[detectedLanguage]);
       LanguageService.saveUserLanguage(detectedLanguage);
 
-      // 获取AI洞察
-      fetchAiInsightsWithLanguage(tasksData, detectedLanguage);
     } catch (error: any) {
       console.error('加载任务数据失败:', error);
       setError(error.message || translations.errors.loadTasksError);
@@ -183,509 +125,37 @@ export default function AnalyticsPage() {
     }
   };
 
-  // 从API加载分析数据
-  const loadAnalyticsData = async (retryCount = 0) => {
-    setIsLoading(prev => ({ ...prev, analytics: true }));
-    try {
-      // 设置超时以避免长时间挂起
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort(new Error('Request timeout after 8 seconds'));
-      }, 8000); // 8秒超时
-
-      const response = await fetch('/api/analytics', {
-        method: 'GET',
-        credentials: 'include',
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // 认证错误时尝试重新登录并重试
-          if (retryCount < 1) {
-            console.log('认证失败，尝试重新登录...');
-            await attemptMockLogin();
-            return loadAnalyticsData(retryCount + 1);
-          }
-          throw new Error(translations.errors.unauthorized);
-        }
-        
-        // 服务器错误且重试次数小于2时进行重试
-        if (response.status >= 500 && retryCount < 2) {
-          console.warn(`服务器错误(${response.status})，${retryCount + 1}秒后重试...`);
-          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-          return loadAnalyticsData(retryCount + 1);
-        }
-        
-        throw new Error(translations.errors.loadAnalyticsFailed);
-      }
-
-      const analyticsData = await response.json();
-      console.log('分析数据已加载:', analyticsData);
-      // 分析数据将直接用于图表展示
-    } catch (error: any) {
-      // 区分超时错误和其他错误
-      if (error.name === 'AbortError') {
-        console.warn('加载分析数据超时，使用本地任务数据作为替代');
-      } else if (error.message === translations.errors.unauthorized) {
-        console.error('未授权访问分析API');
-      } else {
-        console.error('加载分析数据失败:', error.message);
-      }
-      // 即使分析数据加载失败，页面仍会使用本地任务数据计算分析结果
-      // 这确保了即使API不可用，核心功能仍能正常工作
-    } finally {
-      setIsLoading(prev => ({ ...prev, analytics: false }));
-    }
-  };
-
+  
   // 刷新所有数据
   const refreshAllData = async () => {
-    await Promise.all([loadTasks(), loadAnalyticsData()]);
-  };
-  
-  // 调用AI分析API获取真实洞察（带语言参数）
-  const fetchAiInsightsWithLanguage = async (tasksData: Task[], currentLanguage: 'zh' | 'en', retryCount = 0) => {
-    try {
-      // 设置加载状态
-      setIsLoading(prev => ({ ...prev, aiInsights: true }));
-      
-      // 任务数量少于2个时，不调用AI分析，直接使用本地生成的简单洞察
-      if (tasksData.length < 2) {
-        console.log('任务数量太少，使用本地生成的简单洞察');
-        const simpleInsight = currentLanguage === 'zh' 
-          ? `您目前有 ${tasksData.length} 个任务。添加更多任务以获得更全面的AI分析。`
-          : `You currently have ${tasksData.length} tasks. Add more tasks for comprehensive AI analysis.`;
-        setAiInsights(simpleInsight);
-        return;
-      }
-      
-      // 设置超时控制
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12秒超时
-      
-      // 调用AI分析API
-      const response = await fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          tasks: tasksData,
-          language: currentLanguage 
-        }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        // 认证错误时尝试重新登录并重试
-        if (response.status === 401 && retryCount < 1) {
-          console.log('AI洞察认证失败，尝试重新登录...');
-          await attemptMockLogin();
-          return fetchAiInsightsWithLanguage(tasksData, currentLanguage, retryCount + 1);
-        }
-        
-        // 服务器错误时的重试逻辑
-        if (response.status >= 500 && retryCount < 2) {
-          console.warn(`AI分析服务器错误(${response.status})，${retryCount + 1}秒后重试...`);
-          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-          return fetchAiInsightsWithLanguage(tasksData, currentLanguage, retryCount + 1);
-        }
-        
-        // 如果是400错误，直接使用本地生成的洞察
-        if (response.status === 400) {
-          console.warn('AI分析API参数错误，使用本地生成的洞察');
-          const errorInsight = currentLanguage === 'zh' 
-            ? `当前无法获取AI洞察，任务数据可能格式不正确。已完成任务: ${tasksData.filter(t => t.status === 'completed' || t.status === 'done').length}/${tasksData.length}`
-            : `Unable to get AI insights, task data may be in incorrect format. Completed tasks: ${tasksData.filter(t => t.status === 'completed' || t.status === 'done').length}/${tasksData.length}`;
-          setAiInsights(errorInsight);
-          return;
-        }
-        
-        throw new Error(translations.errors.aiAnalysisFailed);
-      }
-      
-      const data = await response.json();
-      
-      if (data.analysis || data.summary) {
-        // 使用AI生成的分析结果
-        const aiContent = data.summary || data.analysis;
-        setAiInsights(aiContent);
-        
-        // 如果是模拟数据，记录日志
-        if (data.isMockData) {
-          console.log('使用模拟AI分析数据');
-        }
-      } else {
-        // 如果API返回的数据不完整，使用备份的模拟分析
-        generateBackupInsights(tasksData, currentLanguage);
-      }
-    } catch (error) {
-      // 捕获网络错误等异常
-      console.error('获取AI洞察失败:', error);
-      // 确保即使发生异常，也使用模拟数据和正确的语言
-      generateBackupInsights(tasksData, currentLanguage);
-    } finally {
-      setIsLoading(prev => ({ ...prev, aiInsights: false }));
-    }
-  };
-  
-  // 原fetchAiInsights函数（兼容现有调用）
-  const fetchAiInsights = async (tasksData: Task[]) => {
-    await fetchAiInsightsWithLanguage(tasksData, language);
-  };
-  
-  // 备份的模拟洞察生成（当API调用失败时使用）
-  /**
-   * 生成模拟的AI洞察内容
-   * @param tasksData 任务数据数组
-   * @param lang 当前语言代码 ('zh' | 'en')
-   */
-  const generateBackupInsights = (tasksData: Task[], lang: 'zh' | 'en') => {
-    // 获取指定语言的翻译
-    const langTranslations = analyticsTranslations[lang];
-    
-    // 简单的分析逻辑
-    const completedTasks = tasksData.filter(task => task.status === 'completed').length;
-    const totalTasks = tasksData.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    const highPriorityTasks = tasksData.filter(task => task.priority === 'high').length;
-    const urgentTasks = tasksData.filter(task => {
-      if (!task.dueDate) return false;
-      const dueDate = new Date(task.dueDate);
-      const today = new Date();
-      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return daysUntilDue <= 3 && task.status !== 'completed';
-    }).length;
-    
-    // 使用指定语言的翻译对象生成多语言洞察
-    const insights = `
-# ${langTranslations.backupInsights.title}
-
-## ${langTranslations.backupInsights.completionSection}
-${langTranslations.backupInsights.completionText(completedTasks, completionRate)}
-
-## ${langTranslations.backupInsights.prioritySection}
-${langTranslations.backupInsights.priorityText(highPriorityTasks)}
-
-## ${langTranslations.backupInsights.timeManagementSection}
-${langTranslations.backupInsights.timeManagementText(urgentTasks)}
-
-## ${langTranslations.backupInsights.suggestionsSection}
-1. ${langTranslations.backupInsights.suggestion1}
-2. ${langTranslations.backupInsights.suggestion2}
-3. ${langTranslations.backupInsights.suggestion3}
-    `.trim();
-    
-    setAiInsights(insights);
-  };
-  
-  // 计算完成百分比
-  const getCompletionPercentage = () => {
-    if (tasks.length === 0) return 0;
-    const completedTasks = tasks.filter(task => task.status === 'completed').length;
-    return Math.round((completedTasks / tasks.length) * 100);
-  };
-  
-  // 生成状态分布数据
-  const getStatusDistribution = () => {
-    const statusMap: Record<string, number> = {};
-    tasks.forEach(task => {
-      statusMap[task.status] = (statusMap[task.status] || 0) + 1;
-    });
-    
-    return Object.entries(statusMap).map(([status, count]) => ({
-      name: status,
-      value: count,
-      label: getStatusLabel(status)
-    }));
-  };
-  
-  // 生成优先级分布数据
-  const getPriorityDistribution = () => {
-    const priorityMap: Record<string, number> = {};
-    tasks.forEach(task => {
-      priorityMap[task.priority] = (priorityMap[task.priority] || 0) + 1;
-    });
-    
-    return Object.entries(priorityMap).map(([priority, count]) => ({
-      name: priority,
-      value: count,
-      label: getPriorityLabel(priority)
-    }));
-  };
-  
-  // 生成类别分布数据
-  const getCategoryDistribution = () => {
-    const categoryMap: Record<string, number> = {};
-    tasks.forEach(task => {
-      categoryMap[task.category] = (categoryMap[task.category] || 0) + 1;
-    });
-    
-    return Object.entries(categoryMap).map(([category, count]) => ({
-      name: category,
-      value: count,
-      label: getCategoryLabel(category)
-    }));
-  };
-  
-  // 获取状态标签
-  const getStatusLabel = (status: string): string => {
-    return translations.statusLabels[status as keyof typeof translations.statusLabels] || status;
-  };
-  
-  // 获取优先级标签
-  const getPriorityLabel = (priority: string): string => {
-    return translations.priorityLabels[priority as keyof typeof translations.priorityLabels] || priority;
-  };
-  
-  // 获取类别标签
-  const getCategoryLabel = (category: string): string => {
-    return translations.categoryLabels[category as keyof typeof translations.categoryLabels] || category;
-  };
-  
-  // 获取状态颜色
-  const getStatusColor = (status: string): string => {
-    const statusColors: Record<string, string> = {
-      todo: '#6366f1',
-      'in-progress': '#f59e0b',
-      completed: '#10b981'
-    };
-    return statusColors[status] || '#9ca3af';
-  };
-  
-  // 获取优先级颜色
-  const getPriorityColor = (priority: string): string => {
-    const priorityColors: Record<string, string> = {
-      low: '#10b981',
-      medium: '#f59e0b',
-      high: '#ef4444'
-    };
-    return priorityColors[priority] || '#9ca3af';
-  };
-  
-  // 获取类别颜色
-  const getCategoryColor = (category: string): string => {
-    const categoryColors: Record<string, string> = {
-      work: '#6366f1',
-      personal: '#f472b6',
-      learning: '#10b981',
-      other: '#9ca3af'
-    };
-    return categoryColors[category] || '#9ca3af';
-  };
-  
-  // 获取即将到期的任务
-  const getUpcomingTasks = () => {
-    const today = new Date();
-    return tasks
-      .filter(task => {
-        if (!task.dueDate || task.status === 'completed') return false;
-        const dueDate = new Date(task.dueDate);
-        return dueDate >= today;
-      })
-      .sort((a, b) => new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime())
-      .slice(0, showAllTasks ? undefined : 5);
-  };
-  
-  // 获取最近完成的任务
-  const getRecentlyCompletedTasks = () => {
-    return tasks
-      .filter(task => task.status === 'completed' && task.completedAt)
-      .sort((a, b) => new Date(b.completedAt || '').getTime() - new Date(a.completedAt || '').getTime())
-      .slice(0, 5);
-  };
-  
-  // 格式化日期
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-  
-  // 计算剩余天数
-  const getDaysRemaining = (dueDateString?: string): string => {
-    if (!dueDateString) return translations.timeRelated.noDueDate;
-    
-    const dueDate = new Date(dueDateString);
-    const today = new Date();
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return translations.timeRelated.expired;
-    if (diffDays === 0) return translations.timeRelated.dueToday;
-    if (diffDays === 1) return translations.timeRelated.dueTomorrow;
-    return translations.timeRelated.daysRemaining(diffDays);
-  };
-  
-  // 获取任务完成趋势数据
-  const getTaskCompletionTrend = () => {
-    // 生成最近7天的数据
-    const days = 7;
-    const trendData = [];
-    const today = new Date();
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      
-      // 格式化日期为YYYY-MM-DD
-      const dateStr = date.toISOString().split('T')[0];
-      const dateLabel = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-      
-      // 计算当天完成的任务数量
-      const completedOnDate = tasks.filter(task => {
-        if (task.status !== 'completed' || !task.completedAt) return false;
-        const taskDate = new Date(task.completedAt).toISOString().split('T')[0];
-        return taskDate === dateStr;
-      }).length;
-      
-      // 计算当天创建的任务数量
-      const createdOnDate = tasks.filter(task => {
-        if (!task.createdAt) return false;
-        const taskDate = new Date(task.createdAt).toISOString().split('T')[0];
-        return taskDate === dateStr;
-      }).length;
-      
-      trendData.push({
-        date: dateLabel,
-        completed: completedOnDate,
-        created: createdOnDate
-      });
-    }
-    
-    return trendData;
-  };
-  
-  // 获取各类别任务的平均完成时间（天）
-  const getAverageCompletionTimeByCategory = () => {
-    interface CategoryStat {
-      total: number;
-      count: number;
-    }
-    
-    const categoryData: Record<string, CategoryStat> = {};
-    
-    tasks.forEach(task => {
-      if (task.status === 'completed' && task.createdAt && task.completedAt) {
-        const created = new Date(task.createdAt).getTime();
-        const completed = new Date(task.completedAt).getTime();
-        const daysToComplete = Math.ceil((completed - created) / (1000 * 60 * 60 * 24));
-        
-        if (!categoryData[task.category]) {
-          categoryData[task.category] = { total: 0, count: 0 };
-        }
-        
-        categoryData[task.category].total += daysToComplete;
-        categoryData[task.category].count += 1;
-      }
-    });
-    
-    // 转换为图表数据格式
-    return Object.entries(categoryData).map(([category, data]) => ({
-      category: getCategoryLabel(category),
-      averageDays: data.count > 0 ? Math.round(data.total / data.count) : 0
-    }));
-  };
-  
-  // 获取任务创建时间分布（按时间段）
-  const getTaskCreationTimeDistribution = () => {
-    // 定义时间段类型
-    interface TimeRange {
-      start: number;
-      end: number;
-      count: number;
-      wrapAround?: boolean;
-      wrapStart?: number;
-      wrapEnd?: number;
-    }
-    
-    // 定义时间段（使用翻译对象中的时间段标签）
-    const timeRanges: Record<string, TimeRange> = {
-      [translations.timeRelated.morning]: { start: 6, end: 10, count: 0 },
-      [translations.timeRelated.lateMorning]: { start: 10, end: 12, count: 0 },
-      [translations.timeRelated.afternoon]: { start: 12, end: 18, count: 0 },
-      [translations.timeRelated.evening]: { start: 18, end: 22, count: 0 },
-      [translations.timeRelated.night]: { start: 22, end: 24, count: 0, wrapAround: true, wrapStart: 0, wrapEnd: 6 }
-    };
-    
-    // 统计各时间段创建的任务
-    tasks.forEach(task => {
-      if (task.createdAt) {
-        const hour = new Date(task.createdAt).getHours();
-        
-        for (const [range, { start, end, wrapAround, wrapStart, wrapEnd }] of Object.entries(timeRanges)) {
-          if (wrapAround && wrapStart !== undefined && wrapEnd !== undefined) {
-            // 处理跨天时间段（深夜）
-            if ((hour >= start && hour < end) || (hour >= wrapStart && hour < wrapEnd)) {
-              timeRanges[range].count++;
-              break;
-            }
-          } else if (hour >= start && hour < end) {
-            timeRanges[range].count++;
-            break;
-          }
-        }
-      }
-    });
-    
-    // 转换为图表数据格式
-    return Object.entries(timeRanges).map(([label, data]) => ({
-      label,
-      value: data.count
-    }));
-  };
-  
-  // 获取截止日期预警分析
-  const getDeadlineWarningAnalysis = () => {
-    const today = new Date();
-    const warningLevels = {
-      [translations.deadlineLevels.expired]: { count: 0, color: '#ef4444' }, // 已过期
-      [translations.deadlineLevels.urgent]: { count: 0, color: '#f59e0b' }, // 1-3天内
-      [translations.deadlineLevels.upcoming]: { count: 0, color: '#3b82f6' }, // 4-7天内
-      [translations.deadlineLevels.safe]: { count: 0, color: '#10b981' }, // 7天以上
-      [translations.deadlineLevels.noDueDate]: { count: 0, color: '#6b7280' } // 无截止日期
-    };
-    
-    // 统计各预警级别的任务
-    tasks.forEach(task => {
-      if (task.status === 'completed') return; // 已完成任务不计入预警
-      
-      if (!task.dueDate) {
-        warningLevels[translations.deadlineLevels.noDueDate].count++;
-        return;
-      }
-      
-      const dueDate = new Date(task.dueDate);
-      const diffTime = dueDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 0) {
-        warningLevels[translations.deadlineLevels.expired].count++;
-      } else if (diffDays <= 3) {
-        warningLevels[translations.deadlineLevels.urgent].count++;
-      } else if (diffDays <= 7) {
-        warningLevels[translations.deadlineLevels.upcoming].count++;
-      } else {
-        warningLevels[translations.deadlineLevels.safe].count++;
-      }
-    });
-    
-    // 转换为图表数据格式
-    return Object.entries(warningLevels).map(([label, data]) => ({
-      label,
-      value: data.count,
-      color: data.color
-    }));
+    await loadTasks();
   };
 
   return (
     <div className="min-h-screen bg-background">
+      {/* 未登录用户提示横幅 */}
+      {!isAuthenticated && (
+        <div className="bg-blue-50 border-b border-blue-200 py-3 px-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-blue-800 font-medium">体验模式</span>
+              <span className="text-blue-600 text-sm">您正在使用演示版本，登录后可保存和管理您的真实数据</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={() => window.location.href = '/'}
+              >
+                返回首页登录
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 头部导航 */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -693,7 +163,8 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             <BarChart3 className="w-8 h-8" />
             <span className="font-semibold text-lg text-foreground">GoTaskMind</span>
           </div>
-          
+
+  
           {/* 桌面导航 - 放在右侧 */}
           <nav className="hidden md:flex justify-end items-center gap-6">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -702,36 +173,29 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             <Link href="/tasks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {translations.navigation.tasks}
             </Link>
-            <Link href="/team" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {translations.navigation.team}
-            </Link>
-            <Link href="/analytics" className="text-sm text-foreground font-medium">
+                        <Link href="/analytics" className="text-sm text-foreground font-medium">
               {translations.navigation.analytics}
             </Link>
             <Button
              variant="ghost"
              size="sm"
              onClick={refreshAllData}
-             disabled={isLoading.tasks || isLoading.analytics}
+             disabled={isLoading.tasks}
              className="ml-2 flex items-center gap-2"
            >
-             {(isLoading.tasks || isLoading.analytics) ? (
+             {isLoading.tasks ? (
                <RefreshCw className="w-4 h-4 animate-spin" />
              ) : (
                <RefreshCw className="w-4 h-4" />
              )}
              {translations.navigation.refresh}
            </Button>
-            {authenticated ? (
-              <Button variant="outline" size="sm" onClick={() => {
-                // 登出逻辑
-                document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
-                window.location.href = '/';
-              }}>
+            {isAuthenticated ? (
+              <Button variant="outline" size="sm" onClick={() => logout()}>
                 {translations.navigation.logout}
               </Button>
             ) : (
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => login()}>
                 {translations.navigation.login}
               </Button>
             )}
@@ -743,7 +207,7 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
               variant="ghost"
               size="sm"
               onClick={refreshAllData}
-              disabled={isLoading.tasks || isLoading.analytics}
+              disabled={isLoading.tasks}
               className="md:hidden flex items-center gap-2"
             >
               {isLoading.tasks ? (
@@ -777,16 +241,13 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
         )}
         
         {/* 未认证提示 */}
-        {!authenticated && !isLoading.tasks && !isLoading.analytics && (
+        {!isAuthenticated && !isLoading.tasks && (
           <Card>
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">{translations.errors.authRequired}</h3>
               <p className="text-muted-foreground mb-6">{translations.errors.loginToViewAnalytics}</p>
               <div className="flex gap-3 justify-center">
-                <Button onClick={attemptMockLogin}>
-                  快速登录（演示）
-                </Button>
                 <Button variant="outline">
                   <Link href="/api/auth/google">{translations.navigation.loginWithGoogle}</Link>
                 </Button>
@@ -796,493 +257,11 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
         )}
         
         {/* 主要内容 */}
-        {authenticated && (
+        {isAuthenticated && (
           <div className="space-y-8">
-          {/* 摘要卡片 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">{translations.summary.totalTasks}</h3>
-                  <Badge variant="outline" className="bg-background">{translations.summary.total}</Badge>
-                </div>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">{tasks.length}</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">{translations.summary.completedTasks}</h3>
-                  <Badge variant="outline" className="bg-background text-green-500">{translations.summary.success}</Badge>
-                </div>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {tasks.filter(task => task.status === 'completed').length}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">{translations.summary.completionRate}</h3>
-                  <Badge variant="outline" className="bg-background">{translations.summary.progress}</Badge>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{getCompletionPercentage()}%</p>
-                  <Progress value={getCompletionPercentage()} className="w-full sm:w-1/2 h-2" />
-                </div>
-              </CardContent>
-            </Card>
+            {/* 个人工作统计 */}
+            <PersonalWorkStats tasks={tasks} />
           </div>
-
-          {/* 图表区域 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 完成率环形图 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{translations.charts.completionOverview.title}</CardTitle>
-                <CardDescription>{translations.charts.completionOverview.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={getStatusDistribution()}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {getStatusDistribution().map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={getStatusColor(entry.name)}
-                          />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        formatter={(value) => [`${value} ${translations.tooltip.tasks}`, translations.tooltip.quantity]}
-                        labelFormatter={(label) => getStatusLabel(label)}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                  {getStatusDistribution().map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: getStatusColor(item.name) }}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {item.label}: {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 优先级分布 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{translations.charts.priorityDistribution.title}</CardTitle>
-                <CardDescription>{translations.charts.priorityDistribution.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={getPriorityDistribution()}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <YAxis
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <RechartsTooltip
-                        formatter={(value) => [`${value} ${translations.tooltip.tasks}`, translations.tooltip.quantity]}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {getPriorityDistribution().map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={getPriorityColor(entry.name)}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* 时间趋势分析 */}
-          <div className="grid grid-cols-1 gap-6">
-            {/* 任务完成趋势 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{translations.charts.taskCompletionTrend.title}</CardTitle>
-                <CardDescription>{translations.charts.taskCompletionTrend.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={getTaskCompletionTrend()}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <YAxis
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        allowDecimals={false}
-                      />
-                      <RechartsTooltip
-                        formatter={(value, name) => [`${value}`, name === 'completed' ? translations.tooltip.completed : translations.tooltip.created]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="created"
-                        stroke="#6366f1"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="completed"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex justify-center gap-6 mt-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                    <span className="text-sm text-muted-foreground">{translations.tooltip.created}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="text-sm text-muted-foreground">{translations.tooltip.completed}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* 类别平均完成时间 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{translations.charts.averageCompletionTime.title}</CardTitle>
-                <CardDescription>{translations.charts.averageCompletionTime.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={getAverageCompletionTimeByCategory()}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="category"
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <YAxis
-                        tick={{ fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        allowDecimals={false}
-                        label={{ value: translations.charts.averageCompletionTime.days, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
-                      />
-                      <RechartsTooltip
-                        formatter={(value) => [`${value} ${translations.tooltip.days}`, translations.tooltip.averageTime]}
-                      />
-                      <Bar dataKey="averageDays" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 类别分布和截止日期预警 */}
-            <div className="grid grid-cols-1 gap-6">
-              {/* 截止日期预警分析 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">{translations.charts.deadlineWarning.title}</CardTitle>
-                  <CardDescription>{translations.charts.deadlineWarning.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={getDeadlineWarningAnalysis()}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis
-                          dataKey="label"
-                          tick={{ fill: '#6b7280' }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                        />
-                        <YAxis
-                          tick={{ fill: '#6b7280' }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                          allowDecimals={false}
-                        />
-                        <RechartsTooltip
-                        formatter={(value) => [`${value} ${translations.tooltip.tasks}`, translations.tooltip.quantity]}
-                      />
-                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                          {getDeadlineWarningAnalysis().map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.color}
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* 任务创建时间分布 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">{translations.charts.creationTimeDistribution.title}</CardTitle>
-                  <CardDescription>{translations.charts.creationTimeDistribution.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={getTaskCreationTimeDistribution()}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                          // 完全不显示外部标签，避免任何重叠问题
-                          label={false}
-                          // 通过点击或悬停查看详细信息
-                        >
-                          {getTaskCreationTimeDistribution().map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]}
-                            />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip
-                          formatter={(value) => [`${value} ${translations.tooltip.tasks}`, translations.tooltip.quantity]}
-                        />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-4 mt-4">
-                    {getTaskCreationTimeDistribution().map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5] }}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {item.label}: {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* 类别分布和即将到期任务 */}
-            <div className="grid grid-cols-1 gap-6">
-            {/* 类别分布 */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{translations.charts.categoryDistribution.title}</CardTitle>
-                <CardDescription>{translations.charts.categoryDistribution.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={getCategoryDistribution()}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={60}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {getCategoryDistribution().map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={getCategoryColor(entry.name)}
-                          />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        formatter={(value) => [`${value} ${translations.tooltip.tasks}`, translations.tooltip.quantity]}
-                        labelFormatter={(label) => getCategoryLabel(label)}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                  {getCategoryDistribution().map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: getCategoryColor(item.name) }}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {item.label}: {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 即将到期任务 */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle className="text-lg font-semibold">{translations.charts.upcomingTasks.title}</CardTitle>
-                  <CardDescription>{translations.charts.upcomingTasks.description}</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAllTasks(!showAllTasks)}
-                  className="flex items-center gap-1"
-                >
-                  {showAllTasks ? translations.charts.upcomingTasks.collapse : translations.charts.upcomingTasks.viewAll}
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${showAllTasks ? 'rotate-180' : ''}`}
-                  />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[350px] rounded-md border border-border">
-                  {getUpcomingTasks().length > 0 ? (
-                    <div className="divide-y divide-border">
-                      {getUpcomingTasks().map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-4 hover:bg-muted/50 transition-colors flex items-start gap-3"
-                        >
-                          <div
-                            className="w-2 h-2 mt-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: getPriorityColor(task.priority) }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-foreground truncate">
-                                {task.title}
-                              </h4>
-                              <Badge variant="outline" className="ml-2">
-                                {getCategoryLabel(task.category)}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {task.description}
-                            </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <Badge
-                                variant="outline"
-                                className={cn('text-xs', {
-                                  'text-red-500': task.priority === 'high',
-                                  'text-amber-500': task.priority === 'medium',
-                                  'text-green-500': task.priority === 'low'
-                                })}
-                              >
-                                {getPriorityLabel(task.priority)}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {getDaysRemaining(task.dueDate)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                      <Calendar className="w-12 h-12 text-muted-foreground mb-2" />
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        {translations.emptyState.noUpcomingTasks}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {translations.emptyState.allTasksScheduled}
-                      </p>
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* AI洞察 */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-accent" />
-                <CardTitle className="text-lg font-semibold">{analyticsTranslations[language].aiInsights.title}</CardTitle>
-                </div>
-                <CardDescription>{analyticsTranslations[language].aiInsights.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading.aiInsights ? (
-                <div className="flex items-center justify-center h-40">
-                  <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none text-muted-foreground">
-                  {aiInsights.split('\n').map((line, index) => (
-                    <div key={index} className="mb-1">
-                      {line.startsWith('#') ? (
-                        <h3 className="text-base font-semibold text-foreground mt-4 mb-2">
-                          {line.replace(/^#+/, '').trim()}
-                        </h3>
-                      ) : line.startsWith('##') ? (
-                        <h4 className="text-sm font-semibold text-foreground mt-3 mb-1">
-                          {line.replace(/^##+/, '').trim()}
-                        </h4>
-                      ) : line.trim() ? (
-                        <p className="text-sm">{line.trim()}</p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-           </Card>
-        </div>
         )}
       </main>
       
@@ -1304,14 +283,7 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
             >
               {translations.navigation.tasks}
             </Link>
-            <Link 
-              href="/team" 
-              className="py-2 px-4 rounded-md hover:bg-accent transition-colors text-base font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              团队管理
-            </Link>
-            <Link 
+                        <Link 
               href="/analytics" 
               className="py-2 px-4 rounded-md bg-accent text-foreground font-medium"
               onClick={() => setIsMobileMenuOpen(false)}
@@ -1319,19 +291,17 @@ ${langTranslations.backupInsights.timeManagementText(urgentTasks)}
               {translations.navigation.analytics}
             </Link>
             <div className="border-t border-border pt-4 mt-4">
-              {authenticated ? (
-                <Button 
-                  className="w-full" 
-                  onClick={() => {
-                    // 登出逻辑
-                    document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
-                    window.location.href = '/';
-                  }}
+              {isAuthenticated ? (
+                <Button
+                  className="w-full"
+                  onClick={() => logout()}
                 >
                   {translations.navigation.logout}
                 </Button>
               ) : (
-                <Button className="w-full">{translations.navigation.login}</Button>
+                <Button className="w-full" onClick={() => login()}>
+                  <Link href="/auth/login">{translations.navigation.login}</Link>
+                </Button>
               )}
             </div>
           </div>

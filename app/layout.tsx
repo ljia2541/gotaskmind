@@ -6,15 +6,17 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Suspense } from "react"
 import { AuthProvider } from "./providers/auth-provider"
+import { NotificationBanner } from "@/components/ui/notification-banner"
+import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
   title: 'GoTaskMind - AI-Powered Project Planning',
-  description: 'Boost team productivity with AI-driven intelligent planning and easy project management.',
+  description: 'Boost productivity with AI-driven intelligent planning and easy project management.',
   generator: 'v0.app',
-  keywords: ['AI project management', 'task planning', 'team collaboration', 'project management tool', 'intelligent planning'],
+  keywords: ['AI project management', 'task planning', 'project management tool', 'intelligent planning'],
   openGraph: {
     title: 'GoTaskMind - AI-Powered Project Planning',
-    description: 'Boost team productivity with AI-driven intelligent planning and easy project management.',
+    description: 'Boost productivity with AI-driven intelligent planning and easy project management.',
     type: 'website',
   },
 }
@@ -26,11 +28,16 @@ export default function RootLayout({
 }>)
 {  
   return (
-    <html className="" lang="zh-CN">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+    <html className="" lang="zh-CN" suppressHydrationWarning>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <Suspense fallback={null}>
           <AuthProvider>
-            {children}
+            <NetworkErrorHandler>
+              <NotificationBanner />
+              <div className="min-h-screen">
+                {children}
+              </div>
+            </NetworkErrorHandler>
           </AuthProvider>
         </Suspense>
         <Analytics />

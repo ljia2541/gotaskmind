@@ -84,8 +84,8 @@ export const analyticsTranslations = {
     navigation: {
       home: '首页',
       tasks: '任务管理',
-      team: '团队管理',
-      analytics: '数据分析',
+        analytics: '数据分析',
+      pricing: '定价',
       refresh: '刷新',
       login: '登录',
       logout: '登出',
@@ -243,8 +243,8 @@ export const analyticsTranslations = {
     navigation: {
       home: 'Home',
       tasks: 'Tasks',
-      team: 'Team',
-      analytics: 'Analytics',
+        analytics: 'Analytics',
+      pricing: 'Pricing',
       refresh: 'Refresh',
       login: 'Login',
       logout: 'Logout',

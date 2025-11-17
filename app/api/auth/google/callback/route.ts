@@ -1,56 +1,53 @@
 'use server'
 
 import { NextResponse } from 'next/server';
-import { verifyAuthCode } from '@/app/lib/auth-service';
-import { cookies } from 'next/headers';
+import { createClient } from '@/app/utils/supabase/server';
 
 /**
  * 处理Google认证回调
+ * 交换授权码获取用户会话并设置cookie
  */
 export async function GET(request: Request) {
-  try {
-    // 解析URL查询参数
-    const url = new URL(request.url);
-    const code = url.searchParams.get('code');
-    const error = url.searchParams.get('error');
-    
-    // 检查是否有错误
-    if (error) {
-      return NextResponse.redirect(
-        new URL('/?authError=' + encodeURIComponent(error), request.url)
-      );
-    }
-    
-    // 检查授权码
-    if (!code) {
-      return NextResponse.redirect(
-        new URL('/?authError=missing_code', request.url)
-      );
-    }
-    
-    // 直接调用验证授权码的函数
-    const { tokens, userInfo } = await verifyAuthCode(code);
-    
-    // 设置用户会话cookie
-    cookies().set('user_session', JSON.stringify({
-      email: userInfo.email,
-      name: userInfo.name,
-      picture: userInfo.picture,
-      token: tokens.id_token,
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24小时过期
-    }), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      sameSite: 'lax'
-    });
-    
-    // 登录成功后重定向到首页
-    return NextResponse.redirect(new URL('/', request.url));
-  } catch (error) {
-    console.error('Google认证回调处理失败:', error);
-    return NextResponse.redirect(
-      new URL('/?authError=callback_failed', request.url)
-    );
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+
+  // 如果有next参数，用作重定向URL
+  let next = searchParams.get('next') ?? '/';
+  if (!next.startsWith('/')) {
+    // 如果next不是相对URL，使用默认值
+    next = '/';
   }
+
+  if (code) {
+    try {
+      const supabase = await createClient();
+
+      // 交换授权码获取会话
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        // 获取转发的主机（负载均衡器前的原始来源）
+        const forwardedHost = request.headers.get('x-forwarded-host');
+        const isLocalEnv = process.env.NODE_ENV === 'development';
+
+        if (isLocalEnv) {
+          // 本地环境下直接使用origin
+          return NextResponse.redirect(`${origin}${next}`);
+        } else if (forwardedHost) {
+          // 生产环境使用转发的主机名
+          return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        } else {
+          // 回退方案
+          return NextResponse.redirect(`${origin}${next}`);
+        }
+      }
+
+      console.error('Google认证交换失败:', error);
+    } catch (error) {
+      console.error('Google回调处理异常:', error);
+    }
+  }
+
+  // 返回用户到错误页面
+  return NextResponse.redirect(`${origin}/?authError=google_callback_failed`);
 }

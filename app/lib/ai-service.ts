@@ -80,32 +80,42 @@ export class AIService {
     // 检测输入语言（简单实现：检查是否包含中文字符）
     const containsChinese = /[\u4e00-\u9fa5]/.test(projectDescription);
     const language = containsChinese ? '中文' : '英文';
-    
+
     // 根据输入语言设置提示词
-    return `${containsChinese ? '请将以下项目描述分解为详细的任务列表。' : 'Please break down the following project description into a detailed task list.'}
+    return `${containsChinese ? '请将以下项目描述分解为详细的任务列表，并为项目生成一个合适的标题。' : 'Please break down the following project description into a detailed task list and generate an appropriate project title.'}
 
 ${containsChinese ? '项目描述' : 'Project Description'}: ${projectDescription}
 
 ${containsChinese ? '请只返回纯JSON格式内容，不要包含任何Markdown格式（如json代码块）或其他文本。格式如下：' : 'Please return only pure JSON format content, without any Markdown formatting (such as json code blocks) or other text. Format as follows:'}
 {
+  "project_title": "${containsChinese ? '为项目生成的简洁标题' : 'A concise title generated for the project'}",
   "tasks": [
     {
+      "id": "${containsChinese ? '唯一任务标识符（如task_1, task_2等）' : 'Unique task identifier (like task_1, task_2, etc.)'}",
       "title": "${containsChinese ? '任务标题' : 'Task Title'}",
       "description": "${containsChinese ? '详细的任务描述' : 'Detailed Task Description'}",
-      "category": "work"${containsChinese ? '或' : 'or'}"personal"${containsChinese ? '或' : 'or'}"learning"${containsChinese ? '或' : 'or'}"other",
+      "category": "${containsChinese ? '规划、学习、开发、写作、创作或其他合适的分类' : 'planning, learning, development, writing, creation, or other appropriate category'}",
       "priority": "low"${containsChinese ? '或' : 'or'}"medium"${containsChinese ? '或' : 'or'}"high",
-      "estimatedHours": ${containsChinese ? '数字（可选）' : 'number (optional)'}
+      "estimated_hours": ${containsChinese ? '预估完成时间（小时数，如2、4、8等）' : 'Estimated completion time (in hours, like 2, 4, 8, etc.)'},
+      "dependencies": [${containsChinese ? '此任务依赖的任务ID列表，如["task_1"]，如无依赖则为空数组' : 'List of task IDs this task depends on, like ["task_1"], empty array if no dependencies'}],
+      "energy_level": "high"${containsChinese ? '或' : 'or'}"medium"${containsChinese ? '或' : 'or'}"low"
     }
   ]
 }
 
 ${containsChinese ? '重要注意事项' : 'Important Notes'}：
-1. ${containsChinese ? '确保category的值只能是work、personal、learning或other中的一个' : 'Ensure that category value is one of work, personal, learning, or other'}
-2. ${containsChinese ? '确保priority的值只能是low、medium或high中的一个' : 'Ensure that priority value is one of low, medium, or high'}
-3. ${containsChinese ? '请严格按照指定的JSON格式返回，不要包含额外的字段' : 'Please return strictly in the specified JSON format without additional fields'}
-4. ${containsChinese ? '生成的任务应该详细、可执行且逻辑清晰' : 'Generated tasks should be detailed, executable, and logically clear'}
-5. ${containsChinese ? '请确保输出是有效的JSON，不要包含任何代码块标记或说明文字' : 'Please ensure the output is valid JSON without any code block markers or explanatory text'}
-6. ${containsChinese ? '请确保生成的任务标题和描述语言与输入语言保持一致' : 'Please ensure that the generated task titles and descriptions maintain the same language as the input'}`;
+1. ${containsChinese ? '必须包含project_title字段，生成一个简洁、描述性的项目标题' : 'Must include project_title field, generate a concise and descriptive project title'}
+2. ${containsChinese ? '每个任务必须有唯一的id字段，使用task_1, task_2等格式' : 'Each task must have a unique id field, use task_1, task_2, etc. format'}
+3. ${containsChinese ? '根据项目性质为category选择合适的分类，如规划、学习、开发、写作、创作等' : 'Choose appropriate category based on project nature, such as planning, learning, development, writing, creation, etc.'}
+4. ${containsChinese ? '确保priority的值只能是low、medium或high中的一个' : 'Ensure that priority value is one of low, medium, or high'}
+5. ${containsChinese ? 'estimated_hours必须是合理的数字（1-40之间）' : 'estimated_hours must be a reasonable number (between 1-40)'}
+6. ${containsChinese ? 'dependencies是任务ID数组，表示执行顺序，无依赖时设为空数组' : 'dependencies is an array of task IDs representing execution order, set to empty array if no dependencies'}
+7. ${containsChinese ? 'energy_level表示任务所需精力：high（高精力）、medium（中等精力）、low（低精力）' : 'energy_level indicates required energy: high (high energy), medium (medium energy), low (low energy)'}
+8. ${containsChinese ? '任务依赖关系应该符合逻辑：基础任务应该在高级任务之前' : 'Task dependencies should be logical: basic tasks should come before advanced tasks'}
+9. ${containsChinese ? '请严格按照指定的JSON格式返回，不要包含额外的字段' : 'Please return strictly in the specified JSON format without additional fields'}
+10. ${containsChinese ? '生成的任务应该详细、可执行且逻辑清晰' : 'Generated tasks should be detailed, executable, and logically clear'}
+11. ${containsChinese ? '请确保输出是有效的JSON，不要包含任何代码块标记或说明文字' : 'Please ensure the output is valid JSON without any code block markers or explanatory text'}
+12. ${containsChinese ? '请确保生成的任务标题和描述语言与输入语言保持一致' : 'Please ensure that the generated task titles and descriptions maintain the same language as the input'}`;
   }
 
   /**
