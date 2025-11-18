@@ -50,7 +50,7 @@ export default function TermsOfService() {
             <li><strong>First-Time Purchase:</strong> Refund guarantee applies only to first-time Pro plan purchases</li>
             <li><strong>Active Usage Proof:</strong> Customer must demonstrate they have actively used the service by:</li>
             <ul>
-              <li>Creating at least 5 projects or tasks</li>
+              <li>Creating at least 3 projects or tasks</li>
               <li>Using AI task generation feature at least 3 times</li>
               <li>Providing specific feedback about service limitations</li>
             </ul>

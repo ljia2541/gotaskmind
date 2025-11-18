@@ -25,6 +25,7 @@ import { TimelineCalendar } from '@/components/timeline-calendar';
 import { Task, categoryLabels, priorityLabels, statusLabels, energyLevelLabels } from '@/types/task';
 import { Project, projectStatusLabels } from '@/types/project';
 import { useAuth } from '@/app/hooks/use-auth';
+import { quotaService } from '@/app/lib/quota-service';
 
 export default function TaskManagementPage() {
   // 认证状态
@@ -360,6 +361,22 @@ export default function TaskManagementPage() {
 
   // 打开添加任务对话框
   const handleOpenAddDialog = () => {
+    // 检查任务配额（仅当选择了特定项目时）
+    const targetProjectId = selectedProjectId === 'all' ? undefined : selectedProjectId;
+    if (targetProjectId) {
+      const projectTasks = tasks.filter(task => task.projectId === targetProjectId);
+      const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, user?.isPro || false);
+
+      if (!taskQuotaInfo.canCreateMoreTasks) {
+        alert(`项目任务配额已满！\n\n` +
+          `当前配额方案: ${taskQuotaInfo.planName}\n` +
+          `该项目已有: ${taskQuotaInfo.usedTaskQuota} 个任务\n` +
+          `任务上限: ${taskQuotaInfo.totalTaskQuota === Infinity ? '无限制' : taskQuotaInfo.totalTaskQuota + ' 个任务'}\n\n` +
+          `升级到Pro版本可获得无限制任务`);
+        return;
+      }
+    }
+
     setEditingTask(null);
     setFormData({
       title: '',
@@ -368,7 +385,7 @@ export default function TaskManagementPage() {
       category: 'work',
       priority: 'medium',
       dueDate: '',
-      projectId: selectedProjectId === 'all' ? undefined : selectedProjectId,
+      projectId: targetProjectId,
       estimatedHours: 2,
       dependencies: [],
       energyLevel: 'medium',
@@ -405,6 +422,21 @@ export default function TaskManagementPage() {
   // 处理表单提交 - 添加或编辑任务
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 如果是新增任务且有项目关联，检查任务配额
+    if (!editingTask && formData.projectId) {
+      try {
+        const projectTasks = tasks.filter(task => task.projectId === formData.projectId);
+        quotaService.checkTaskQuotaInProject(projectTasks, user?.isPro || false);
+      } catch (error: any) {
+        if (error.code === 'TASK_QUOTA_EXCEEDED') {
+          alert(error.message);
+          return;
+        }
+        // 其他错误类型，继续处理
+        console.error('任务配额检查错误:', error);
+      }
+    }
 
     const now = new Date().toISOString();
     let updatedTasks;
@@ -447,6 +479,21 @@ export default function TaskManagementPage() {
 
   // 处理添加项目
   const handleOpenAddProjectDialog = () => {
+    // 检查项目配额
+    if (!editingProject) {
+      const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+
+      if (!quotaInfo.canCreateMore) {
+        // 显示配额已满的错误信息
+        alert(`项目配额已满！\n\n` +
+          `当前配额方案: ${quotaInfo.quotaDescription}\n` +
+          `已使用: ${quotaInfo.usedQuota} 个项目\n` +
+          `配额上限: ${quotaInfo.totalQuota} 个项目\n\n` +
+          `升级到Pro版本可获得 500 个项目配额`);
+        return;
+      }
+    }
+
     setEditingProject(null);
     setProjectFormData({
       title: '',
@@ -461,6 +508,20 @@ export default function TaskManagementPage() {
   // 处理项目表单提交
   const handleProjectSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 如果是新增项目，再次检查配额
+    if (!editingProject) {
+      try {
+        quotaService.checkProjectQuota(projects, user?.isPro || false);
+      } catch (error: any) {
+        if (error.code === 'QUOTA_EXCEEDED') {
+          alert(error.message);
+          return;
+        }
+        // 其他错误类型，继续处理
+        console.error('配额检查错误:', error);
+      }
+    }
 
     const now = new Date().toISOString();
     let updatedProjects;
@@ -744,9 +805,28 @@ export default function TaskManagementPage() {
               添加任务
             </Button>
 
-            <Button variant="secondary" onClick={handleOpenAddProjectDialog}>
+            <Button
+              variant="secondary"
+              onClick={handleOpenAddProjectDialog}
+              className={(() => {
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
+                return warningLevel === 'danger' ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300' :
+                       warningLevel === 'warning' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300' : '';
+              })()}
+            >
               <PlusCircle className="w-4 h-4 mr-2" />
               添加项目
+              {(() => {
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
+                if (warningLevel === 'danger') {
+                  return <span className="ml-2 text-xs">(配额已满)</span>;
+                } else if (warningLevel === 'warning') {
+                  return <span className="ml-2 text-xs">({quotaInfo.remainingQuota}剩余)</span>;
+                }
+                return null;
+              })()}
             </Button>
           </div>
         </div>
@@ -757,6 +837,53 @@ export default function TaskManagementPage() {
           <div className="md:col-span-1">
             <Card className="p-4 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">项目列表</h2>
+
+              {/* 配额信息显示 */}
+              {(() => {
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
+                const statusColor = quotaService.getQuotaStatusColor(quotaInfo);
+
+                return (
+                  <div className={`mb-4 p-3 rounded-lg border ${statusColor}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        {quotaInfo.planName} 配额
+                      </span>
+                      <span className="text-xs">
+                        {quotaService.formatQuotaForDisplay(quotaInfo)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          warningLevel === 'danger' ? 'bg-red-500' :
+                          warningLevel === 'warning' ? 'bg-amber-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(quotaInfo.usagePercentage, 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-xs opacity-75">
+                      {quotaInfo.remainingQuota > 0
+                        ? `还可创建 ${quotaInfo.remainingQuota} 个项目`
+                        : '配额已满，请升级到Pro版本'
+                      }
+                    </div>
+                    {!user?.isPro && quotaInfo.upgradeAvailable && (
+                      <div className="mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs h-7"
+                          onClick={() => window.location.href = '/pricing'}
+                        >
+                          升级到Pro (500项目)
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex flex-col gap-2">
                 <button
                   className={`px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === 'all' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
@@ -764,18 +891,40 @@ export default function TaskManagementPage() {
                 >
                   所有任务
                 </button>
-                {projects.map((project) => (
-                  <div key={project.id} className="relative">
-                    <button
-                      className={`w-full px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === project.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
-                      onClick={() => setSelectedProjectId(project.id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
-                        <span className="truncate">{project.title}</span>
-                      </div>
-                    </button>
-                    <DropdownMenu>
+                {projects.map((project) => {
+                  const projectTasks = tasks.filter(task => task.projectId === project.id);
+                  const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, user?.isPro || false);
+                  const warningLevel = taskQuotaInfo.taskLimitReached ? 'danger' :
+                                     taskQuotaInfo.upgradeAvailable ? 'warning' : 'normal';
+
+                  return (
+                    <div key={project.id} className="relative">
+                      <button
+                        className={`w-full px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === project.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+                        onClick={() => setSelectedProjectId(project.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
+                          <span className="truncate">{project.title}</span>
+                        </div>
+                        {/* 任务配额显示 */}
+                        <div className="ml-5 mt-1">
+                          <div className={`text-xs ${
+                            warningLevel === 'danger' ? 'text-red-600' :
+                            warningLevel === 'warning' ? 'text-amber-600' : 'text-muted-foreground'
+                          }`}>
+                            {quotaService.formatTaskQuotaForDisplay(taskQuotaInfo)}
+                          </div>
+                          {warningLevel !== 'normal' && (
+                            <div className={`text-xs ${
+                              warningLevel === 'danger' ? 'text-red-500' : 'text-amber-500'
+                            }`}>
+                              {warningLevel === 'danger' ? '任务已满' : '接近限制'}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                      <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"

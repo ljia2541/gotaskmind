@@ -105,7 +105,7 @@ export default function PricingPage() {
       description: 'Perfect for individuals and small teams getting started',
       features: [
         'Up to 3 projects',
-        '20 tasks per project',
+        '10 tasks per project',
         'Basic AI task generation',
         'Kanban view',
         'Email support',
@@ -123,17 +123,15 @@ export default function PricingPage() {
       name: 'Pro',
       price: '$8',
       period: 'month',
-      description: 'Best for growing teams and professionals',
+      description: '500 projects with unlimited tasks and advanced AI features for professionals',
       features: [
-        'Unlimited projects',
+        '500 projects',
         'Unlimited tasks',
-        'Unlimited team members',
         'Advanced AI deep insights',
         'Multiple views (Kanban, Timeline, Calendar)',
         'Priority support',
         'Custom integrations',
         'Advanced analytics',
-        'Export features',
       ],
       annualDiscount: null,
       button: {
@@ -151,7 +149,7 @@ export default function PricingPage() {
       name: 'Pro',
       price: '$88',
       period: 'year',
-      description: 'Save 8% with annual billing',
+      description: 'Save 8% with annual billing - all Pro features included for teams',
       features: [
         'Everything in Pro monthly',
         'Annual billing discount',
@@ -219,11 +217,11 @@ export default function PricingPage() {
     },
     {
       question: 'What is your refund policy?',
-      answer: 'We offer a satisfaction guarantee for first-time Pro plan purchases. Refunds are available within 30 days if you have actively used the service (created at least 5 projects/tasks and used AI generation 3+ times) and contacted our support team. Please review our Terms of Service for detailed eligibility requirements.'
+      answer: 'All Pro plan purchases are final and non-refundable. However, we offer a 14-day evaluation period for new customers to assess our platform. During this period, customers may request a credit toward future services if they demonstrate comprehensive platform usage and provide detailed feedback. Credits are issued at our sole discretion and require meeting all evaluation criteria.'
     },
     {
-      question: 'How do I request a refund?',
-      answer: 'To request a refund, contact our support team through our help center at support@gotaskmind.com. Please provide your account details, usage evidence, and specific feedback about service limitations. We\'ll review your request within 2 business days.'
+      question: 'How do I request a service credit?',
+      answer: 'Service credit requests require submission of a comprehensive evaluation report including: complete project documentation (minimum 15 projects with detailed task breakdowns), AI feature utilization analysis (minimum 20 AI generations with effectiveness metrics), integration implementation proof, and a 500-word detailed analysis of platform limitations. Email your complete evaluation report to 915715442@qq.com. Final determination within 10 business days.'
     }
   ]
 
@@ -288,7 +286,7 @@ export default function PricingPage() {
               </div>
               <div className="flex items-center gap-1">
                 <Check className="w-4 h-4 text-green-500" />
-                <span>30-day money-back guarantee</span>
+                <span>All sales final</span>
               </div>
             </div>
           </div>

@@ -426,11 +426,19 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-              <Link href="/" passHref>
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transition-all hover:scale-105 hover:shadow-lg">
-                  Get Started
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transition-all hover:scale-105 hover:shadow-lg"
+                onClick={() => {
+                  // 滚动到AI输入区域
+                  const aiInputSection = document.querySelector('.max-w-3xl.mx-auto.mb-8');
+                  if (aiInputSection) {
+                    aiInputSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
+                Get Started
+              </Button>
             </div>
 
             <p className="text-sm text-muted-foreground mt-6">
@@ -581,7 +589,7 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">3 projects per month</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">3 projects</span>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
@@ -597,7 +605,17 @@ export default function LandingPage() {
                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">Kanban view</span>
                   </li>
                 </ul>
-              <Button variant="outline" className="w-full bg-transparent hover:bg-card/20 transition-colors">
+              <Button
+                variant="outline"
+                className="w-full bg-transparent hover:bg-card/20 transition-colors"
+                onClick={() => {
+                  // 滚动到AI输入区域
+                  const aiInputSection = document.querySelector('.max-w-3xl.mx-auto.mb-8');
+                  if (aiInputSection) {
+                    aiInputSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
                 Get Started - Free
               </Button>
             </div>
@@ -617,28 +635,45 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Unlimited projects</span>
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Advanced AI Integration</span>
+                      <div className="text-xs text-muted-foreground ml-6">Sophisticated neural network-powered task analysis</div>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Unlimited tasks</span>
-                  </li>
-
-                  <li className="flex items-start gap-3 group">
-                    <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Advanced AI deep insights</span>
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Intelligent Smart Scheduling</span>
+                      <div className="text-xs text-muted-foreground ml-6">Machine learning-optimized time allocation</div>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Multiple views (Kanban, Timeline, Calendar)</span>
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Multi-Dimensional Project Views</span>
+                      <div className="text-xs text-muted-foreground ml-6">Kanban boards, timeline calendars & analytics dashboards</div>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Priority support</span>
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Enterprise-Grade Security</span>
+                      <div className="text-xs text-muted-foreground ml-6">End-to-end encryption with SOC 2 compliance</div>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Custom integrations</span>
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Advanced Analytics & Insights</span>
+                      <div className="text-xs text-muted-foreground ml-6">AI-powered productivity tracking and optimization recommendations</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3 group">
+                    <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Priority Support & Consulting</span>
+                      <div className="text-xs text-muted-foreground ml-6">Dedicated account manager with 24/7 assistance</div>
+                    </div>
                   </li>
                 </ul>
               <Button
@@ -742,11 +777,19 @@ export default function LandingPage() {
               Experience how AI-driven intelligent planning with GoTaskMind can transform your work and life.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000">
-              <Link href="/" passHref>
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
-                  Start Free
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 transform hover:scale-105 transition-all duration-300 hover:shadow-lg"
+                onClick={() => {
+                  // 滚动到AI输入区域
+                  const aiInputSection = document.querySelector('.max-w-3xl.mx-auto.mb-8');
+                  if (aiInputSection) {
+                    aiInputSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
+                Start Free
+              </Button>
             </div>
           </div>
         </div>

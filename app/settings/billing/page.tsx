@@ -228,11 +228,11 @@ export default function BillingSettingsPage() {
 
             {/* Page Title */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                账单与订阅管理
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Subscription & Billing Management
               </h1>
-              <p className="text-lg text-muted-foreground">
-                管理您的GoTaskMind订阅和支付信息
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Comprehensive control over your GoTaskMind subscription, payment methods, and premium features
               </p>
             </div>
 
@@ -244,7 +244,7 @@ export default function BillingSettingsPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <CreditCard className="w-5 h-5" />
-                      当前订阅
+                      Current Subscription
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -424,116 +424,190 @@ export default function BillingSettingsPage() {
                   </CardContent>
                 </Card>
 
-                {/* 账单历史 */}
+                {/* Billing History */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="w-5 h-5" />
-                      账单历史
+                      Transaction History
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8 text-muted-foreground">
                       <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>暂无账单历史记录</p>
-                      <p className="text-sm mt-2">您的支付历史将在这里显示</p>
+                      <p>No transaction history available</p>
+                      <p className="text-sm mt-2">Your payment transactions will appear here</p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* 侧边栏 */}
+              {/* Sidebar */}
               <div className="space-y-6">
-                {/* 账单信息 */}
+                {/* Account Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>账单信息</CardTitle>
+                    <CardTitle>Account Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">邮箱</div>
+                      <div className="text-sm text-muted-foreground">Email Address</div>
                       <div className="font-medium">{user.email}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">用户名</div>
+                      <div className="text-sm text-muted-foreground">Full Name</div>
                       <div className="font-medium">{user.name}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">用户ID</div>
+                      <div className="text-sm text-muted-foreground">Account ID</div>
                       <div className="font-mono text-xs">{user.id}</div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* 快速操作 */}
+                {/* Quick Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>快速操作</CardTitle>
+                    <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link href="/pricing">
                         <CreditCard className="w-4 h-4 mr-2" />
-                        查看定价
+                        View Pricing Plans
                       </Link>
                     </Button>
-                                        <Button variant="outline" asChild className="w-full justify-start">
+                    <Button variant="outline" asChild className="w-full justify-start">
                       <a href="mailto:ljia2541@gmail.com">
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        联系支持
+                        Contact Support Team
                       </a>
                     </Button>
                   </CardContent>
                 </Card>
 
                 
-                {/* Pro功能预览 */}
-                {isPro && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Pro功能</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>无限项目</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>无限任务</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>无限团队成员</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>高级AI功能</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>优先支持</span>
+                {/* Premium Features Showcase */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Premium Features
+                      {isPro && (
+                        <Badge className="ml-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                          Active
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Advanced AI Integration
+                          </div>
+                          <div className="text-xs text-muted-foreground">Sophisticated neural network-powered task analysis</div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Intelligent Smart Scheduling
+                          </div>
+                          <div className="text-xs text-muted-foreground">Machine learning-optimized time allocation</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Multi-Dimensional Project Views
+                          </div>
+                          <div className="text-xs text-muted-foreground">Kanban boards, timeline calendars & analytics dashboards</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Enterprise-Grade Security
+                          </div>
+                          <div className="text-xs text-muted-foreground">End-to-end encryption with SOC 2 compliance</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Advanced Analytics & Insights
+                          </div>
+                          <div className="text-xs text-muted-foreground">AI-powered productivity tracking and optimization recommendations</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        {isPro ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <div>
+                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            Priority Support & Consulting
+                          </div>
+                          <div className="text-xs text-muted-foreground">Dedicated account manager with 24/7 assistance</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {!isPro && (
+                      <div className="mt-6 pt-4 border-t">
+                        <Button asChild className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                          <Link href="/pricing">
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Upgrade to Premium
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
 
-            {/* 底部链接 */}
+            {/* Footer Links */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 text-sm text-muted-foreground">
               <Link href="/terms" className="hover:text-foreground transition-colors">
-                服务条款
+                Terms of Service
               </Link>
               <span>•</span>
               <Link href="/privacy" className="hover:text-foreground transition-colors">
-                隐私政策
+                Privacy Policy
               </Link>
               <span>•</span>
               <a href="mailto:ljia2541@gmail.com" className="hover:text-foreground transition-colors">
-                联系支持
+                Premium Support
               </a>
             </div>
           </div>

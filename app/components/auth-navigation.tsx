@@ -89,7 +89,7 @@ export function AuthNavigation() {
         )}
         {isAuthenticated ? (
           <>
-            <NotificationButton userEmail={user?.email} isPro={isPro} />
+            {/* <NotificationButton userEmail={user?.email} isPro={isPro} /> */}
             <AuthenticatedMenu user={user!} onLogout={logout} translations={translations} />
           </>
         ) : (
@@ -184,7 +184,7 @@ export function AuthNavigation() {
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
-                <NotificationButton userEmail={user?.email} isPro={isPro} />
+                {/* <NotificationButton userEmail={user?.email} isPro={isPro} /> */}
               </div>
               <Button
                 variant="outline"

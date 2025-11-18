@@ -10,13 +10,13 @@ import { NotificationBanner } from "@/components/ui/notification-banner"
 import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
-  title: 'GoTaskMind - AI-Powered Project Planning',
-  description: 'Boost productivity with AI-driven intelligent planning and easy project management.',
+  title: 'GoTaskMind - AI-Powered Project Management Platform',
+  description: 'Transform your ideas into actionable plans with AI-powered project management. Perfect for teams and professionals.',
   generator: 'v0.app',
-  keywords: ['AI project management', 'task planning', 'project management tool', 'intelligent planning'],
+  keywords: ['AI project management', 'task planning', 'project management tool', 'intelligent planning', 'team collaboration'],
   openGraph: {
-    title: 'GoTaskMind - AI-Powered Project Planning',
-    description: 'Boost productivity with AI-driven intelligent planning and easy project management.',
+    title: 'GoTaskMind - AI-Powered Project Management Platform',
+    description: 'Transform your ideas into actionable plans with AI-powered project management. Perfect for teams and professionals.',
     type: 'website',
   },
 }
@@ -33,7 +33,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <AuthProvider>
             <NetworkErrorHandler>
-              <NotificationBanner />
+              {/* <NotificationBanner /> */}
               <div className="min-h-screen">
                 {children}
               </div>
