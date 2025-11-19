@@ -11,9 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Calendar, Clock, ChevronLeft, ChevronRight, AlertCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Calendar, Clock, ChevronLeft, ChevronRight, AlertCircle, Edit, Trash2, MoreHorizontal, Plus, Globe } from 'lucide-react';
 import { Task, TimeSlot, CalendarEvent } from '@/types/task';
 import { SmartSchedulerService } from '@/app/lib/smart-scheduler-service';
+import { timeZoneService } from '@/app/lib/timezone-service';
+import { TimeZoneSelector } from '@/components/ui/timezone-selector';
 
 interface TimelineCalendarProps {
   tasks: Task[];
@@ -21,15 +23,17 @@ interface TimelineCalendarProps {
   onTaskUpdate?: (task: Task) => void;
   onTaskEdit?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
+  onTaskCreate?: (task: Omit<Task, 'id' | 'createdAt' | 'comments'>) => void;
 }
 
-export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate, onTaskEdit, onTaskDelete }: TimelineCalendarProps) {
+export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate, onTaskEdit, onTaskDelete, onTaskCreate }: TimelineCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [showTaskDetail, setShowTaskDetail] = useState<Task | null>(null);
   const [showEventDetail, setShowEventDetail] = useState<CalendarEvent | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'task' | 'event'; item: Task | CalendarEvent } | null>(null);
   const [showEditEvent, setShowEditEvent] = useState<CalendarEvent | null>(null);
+  const [showAddEvent, setShowAddEvent] = useState<{ date: Date; isTask: boolean } | null>(null);
   const [eventFormData, setEventFormData] = useState({
     title: '',
     description: '',
@@ -38,9 +42,24 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
     type: 'meeting' as CalendarEvent['type'],
     isBlocking: false
   });
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    description: '',
+    category: 'work' as Task['category'],
+    priority: 'medium' as Task['priority'],
+    estimatedHours: 2,
+    startTime: '',
+    endTime: ''
+  });
   const [loading, setLoading] = useState(false);
+  const [userTimeZone, setUserTimeZone] = useState(timeZoneService.getUserTimeZone());
 
   const scheduler = SmartSchedulerService.getInstance();
+
+  // 处理时区变更
+  const handleTimeZoneChange = (timeZone: string) => {
+    setUserTimeZone(timeZone);
+  };
 
   useEffect(() => {
     loadCalendarEvents();
@@ -176,36 +195,186 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
     }
   };
 
+  // 处理点击日期单元格
+  const handleDateClick = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const now = new Date();
+
+    // 获取用户时区的当前时间
+    const userNow = new Date();
+    const localHour = userNow.getHours();
+
+    // 设置默认开始时间为用户时区的下一个整点
+    const startHour = (localHour + 1) % 24;
+    const startTime = new Date(date);
+    startTime.setHours(startHour, 0, 0, 0);
+
+    // 设置默认结束时间为开始时间后1小时
+    const endTime = new Date(startTime);
+    endTime.setHours(startTime.getHours() + 1);
+
+    // 将时间转换为用户时区的本地时间格式
+    const formatDateTimeForInput = (date: Date): string => {
+      // 创建一个表示用户时区的日期对象
+      const userDate = new Date(date.toLocaleString("en-US", {
+        timeZone: userTimeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }));
+
+      // 格式化为YYYY-MM-DDTHH:MM
+      const year = userDate.getFullYear();
+      const month = String(userDate.getMonth() + 1).padStart(2, '0');
+      const day = String(userDate.getDate()).padStart(2, '0');
+      const hours = String(userDate.getHours()).padStart(2, '0');
+      const minutes = String(userDate.getMinutes()).padStart(2, '0');
+
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    // 初始化事件表单数据
+    setEventFormData({
+      title: '',
+      description: '',
+      startTime: formatDateTimeForInput(startTime),
+      endTime: formatDateTimeForInput(endTime),
+      type: 'meeting',
+      isBlocking: false
+    });
+
+    // 初始化任务表单数据
+    setTaskFormData({
+      title: '',
+      description: '',
+      category: 'work',
+      priority: 'medium',
+      estimatedHours: 2,
+      startTime: formatDateTimeForInput(startTime),
+      endTime: formatDateTimeForInput(endTime)
+    });
+
+    setShowAddEvent({ date, isTask: false });
+  };
+
+  // 处理添加新事件
+  const handleAddEvent = () => {
+    // 将本地时间转换为UTC时间存储
+    const startTime = new Date(eventFormData.startTime);
+    const endTime = new Date(eventFormData.endTime);
+
+    const newEvent: CalendarEvent = {
+      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: eventFormData.title,
+      description: eventFormData.description,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      type: eventFormData.type,
+      isBlocking: eventFormData.isBlocking
+    };
+
+    setCalendarEvents(prev => [...prev, newEvent]);
+    setShowAddEvent(null);
+    setEventFormData({
+      title: '',
+      description: '',
+      startTime: '',
+      endTime: '',
+      type: 'meeting',
+      isBlocking: false
+    });
+  };
+
+  // 处理添加新任务
+  const handleAddTask = () => {
+    if (!onTaskCreate) return;
+
+    // 将本地时间转换为UTC时间存储
+    const startTime = new Date(taskFormData.startTime);
+    const endTime = new Date(taskFormData.endTime);
+
+    const newTask: Omit<Task, 'id' | 'createdAt' | 'comments'> = {
+      title: taskFormData.title,
+      description: taskFormData.description,
+      status: 'todo',
+      category: taskFormData.category,
+      priority: taskFormData.priority,
+      estimatedHours: taskFormData.estimatedHours,
+      energyLevel: 'medium',
+      scheduledSlots: [{
+        id: `slot-${Date.now()}`,
+        taskId: '', // 将由父组件设置
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        date: startTime.toISOString().split('T')[0],
+        isScheduled: true,
+        isCompleted: false
+      }],
+      isTimeScheduled: true
+    };
+
+    onTaskCreate(newTask);
+    setShowAddEvent(null);
+    setTaskFormData({
+      title: '',
+      description: '',
+      category: 'work',
+      priority: 'medium',
+      estimatedHours: 2,
+      startTime: '',
+      endTime: ''
+    });
+  };
+
   const weekDates = getWeekDates();
   const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            时间线日历
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('prev')}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[120px] text-center">
-              {weekDates[0].toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })} -
-              {weekDates[6].toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('next')}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              时间线日历
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <TimeZoneSelector
+                onTimeZoneChange={handleTimeZoneChange}
+                variant="compact"
+                showOffset={true}
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {timeZoneService.formatDateTimeSimple(new Date(), {
+                format: 'short'
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateWeek('prev')}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[120px] text-center">
+                {weekDates[0].toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })} -
+                {weekDates[6].toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateWeek('next')}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -232,14 +401,29 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
             return (
               <div
                 key={date.toISOString()}
-                className={`min-h-[200px] border rounded-lg p-2 space-y-1 ${
+                className={`min-h-[200px] border rounded-lg p-2 space-y-1 cursor-pointer hover:border-primary transition-colors ${
                   isToday ? 'border-primary bg-primary/5' : 'border-border'
                 }`}
+                onClick={() => handleDateClick(date)}
               >
-                <div className={`text-center p-1 rounded ${
-                  isToday ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                }`}>
-                  <div className="text-xs">{date.getDate()}</div>
+                <div className="flex items-center justify-between">
+                  <div className={`text-center p-1 rounded ${
+                    isToday ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                  }`}>
+                    <div className="text-xs">{date.getDate()}</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 opacity-0 hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDateClick(date);
+                    }}
+                    title="添加事件或任务"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
                 </div>
 
                 {/* 日历事件 */}
@@ -257,9 +441,8 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                       <div className="flex-1 min-w-0">
                         <div className="truncate font-medium">{event.title}</div>
                         <div className="opacity-75">
-                          {new Date(event.startTime).toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
+                          {timeZoneService.formatDateTimeSimple(event.startTime, {
+                            format: 'time-only'
                           })}
                         </div>
                       </div>
@@ -324,9 +507,8 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                           <div className="truncate font-medium">{task.title}</div>
                           <div className="flex justify-between items-center opacity-75">
                             <span>
-                              {startTime.toLocaleTimeString('zh-CN', {
-                                hour: '2-digit',
-                                minute: '2-digit'
+                              {timeZoneService.formatDateTimeSimple(slot.startTime, {
+                                format: 'time-only'
                               })}
                             </span>
                             {task.energyLevel && (
@@ -478,15 +660,11 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     {showTaskDetail.scheduledSlots.map(slot => (
                       <div key={slot.id} className="text-sm p-2 bg-muted rounded">
                         <Clock className="inline w-3 h-3 mr-1" />
-                        {new Date(slot.startTime).toLocaleString('zh-CN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                        {timeZoneService.formatDateTimeSimple(slot.startTime, {
+                          format: 'short'
                         })} -
-                        {new Date(slot.endTime).toLocaleTimeString('zh-CN', {
-                          hour: '2-digit',
-                          minute: '2-digit'
+                        {timeZoneService.formatDateTimeSimple(slot.endTime, {
+                          format: 'time-only'
                         })}
                       </div>
                     ))}
@@ -568,15 +746,11 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                 <span className="font-medium">时间：</span>
                 <div className="text-sm p-2 bg-muted rounded mt-2">
                   <Clock className="inline w-3 h-3 mr-1" />
-                  {new Date(showEventDetail.startTime).toLocaleString('zh-CN', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  {timeZoneService.formatDateTimeSimple(showEventDetail.startTime, {
+                    format: 'short'
                   })} -
-                  {new Date(showEventDetail.endTime).toLocaleTimeString('zh-CN', {
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  {timeZoneService.formatDateTimeSimple(showEventDetail.endTime, {
+                    format: 'time-only'
                   })}
                 </div>
               </div>
@@ -740,6 +914,243 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 添加事件/任务对话框 */}
+      <Dialog open={!!showAddEvent} onOpenChange={() => setShowAddEvent(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              在 {showAddEvent?.date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })} 添加
+            </DialogTitle>
+          </DialogHeader>
+
+          {showAddEvent && (
+            <div className="space-y-4 py-4">
+              {/* 选择添加类型 */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={!showAddEvent.isTask ? "default" : "outline"}
+                  onClick={() => setShowAddEvent(prev => prev ? { ...prev, isTask: false } : null)}
+                  className="flex-1"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  添加事件
+                </Button>
+                <Button
+                  variant={showAddEvent.isTask ? "default" : "outline"}
+                  onClick={() => setShowAddEvent(prev => prev ? { ...prev, isTask: true } : null)}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  添加任务
+                </Button>
+              </div>
+
+              {!showAddEvent.isTask ? (
+                /* 添加事件表单 */
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEvent(); }} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="add-event-title">事件标题</Label>
+                    <Input
+                      id="add-event-title"
+                      value={eventFormData.title}
+                      onChange={(e) => setEventFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="输入事件标题"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="add-event-description">事件描述</Label>
+                    <Textarea
+                      id="add-event-description"
+                      value={eventFormData.description}
+                      onChange={(e) => setEventFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="输入事件描述（可选）"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="add-event-start-time">开始时间</Label>
+                      <Input
+                        id="add-event-start-time"
+                        type="datetime-local"
+                        value={eventFormData.startTime}
+                        onChange={(e) => setEventFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="add-event-end-time">结束时间</Label>
+                      <Input
+                        id="add-event-end-time"
+                        type="datetime-local"
+                        value={eventFormData.endTime}
+                        onChange={(e) => setEventFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="add-event-type">事件类型</Label>
+                      <Select
+                        value={eventFormData.type}
+                        onValueChange={(value) => setEventFormData(prev => ({ ...prev, type: value as CalendarEvent['type'] }))}
+                      >
+                        <SelectTrigger id="add-event-type">
+                          <SelectValue placeholder="选择事件类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="meeting">会议</SelectItem>
+                          <SelectItem value="personal">个人</SelectItem>
+                          <SelectItem value="work">工作</SelectItem>
+                          <SelectItem value="other">其他</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="add-event-blocking"
+                        checked={eventFormData.isBlocking}
+                        onCheckedChange={(checked) => setEventFormData(prev => ({ ...prev, isBlocking: checked }))}
+                      />
+                      <Label htmlFor="add-event-blocking" className="text-sm">
+                        不可用时间
+                      </Label>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddEvent(null)}
+                    >
+                      取消
+                    </Button>
+                    <Button type="submit">
+                      添加事件
+                    </Button>
+                  </DialogFooter>
+                </form>
+              ) : (
+                /* 添加任务表单 */
+                <form onSubmit={(e) => { e.preventDefault(); handleAddTask(); }} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="add-task-title">任务标题</Label>
+                    <Input
+                      id="add-task-title"
+                      value={taskFormData.title}
+                      onChange={(e) => setTaskFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="输入任务标题"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="add-task-description">任务描述</Label>
+                    <Textarea
+                      id="add-task-description"
+                      value={taskFormData.description}
+                      onChange={(e) => setTaskFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="输入任务描述（可选）"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="add-task-start-time">开始时间</Label>
+                      <Input
+                        id="add-task-start-time"
+                        type="datetime-local"
+                        value={taskFormData.startTime}
+                        onChange={(e) => setTaskFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="add-task-end-time">结束时间</Label>
+                      <Input
+                        id="add-task-end-time"
+                        type="datetime-local"
+                        value={taskFormData.endTime}
+                        onChange={(e) => setTaskFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="add-task-category">分类</Label>
+                      <Select
+                        value={taskFormData.category}
+                        onValueChange={(value) => setTaskFormData(prev => ({ ...prev, category: value as Task['category'] }))}
+                      >
+                        <SelectTrigger id="add-task-category">
+                          <SelectValue placeholder="选择分类" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="work">工作</SelectItem>
+                          <SelectItem value="personal">个人</SelectItem>
+                          <SelectItem value="learning">学习</SelectItem>
+                          <SelectItem value="other">其他</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="add-task-priority">优先级</Label>
+                      <Select
+                        value={taskFormData.priority}
+                        onValueChange={(value) => setTaskFormData(prev => ({ ...prev, priority: value as Task['priority'] }))}
+                      >
+                        <SelectTrigger id="add-task-priority">
+                          <SelectValue placeholder="选择优先级" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">低</SelectItem>
+                          <SelectItem value="medium">中</SelectItem>
+                          <SelectItem value="high">高</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="add-task-hours">预估时间（小时）</Label>
+                      <Input
+                        id="add-task-hours"
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={taskFormData.estimatedHours}
+                        onChange={(e) => setTaskFormData(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 2 }))}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddEvent(null)}
+                    >
+                      取消
+                    </Button>
+                    <Button type="submit">
+                      添加任务
+                    </Button>
+                  </DialogFooter>
+                </form>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </Card>

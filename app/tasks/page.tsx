@@ -479,17 +479,26 @@ export default function TaskManagementPage() {
 
   // 处理添加项目
   const handleOpenAddProjectDialog = () => {
-    // 检查项目配额
+    // 检查项目配额（使用严格配额控制）
     if (!editingProject) {
-      const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+      const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
 
       if (!quotaInfo.canCreateMore) {
         // 显示配额已满的错误信息
-        alert(`项目配额已满！\n\n` +
+        let errorMessage = `项目配额已满！\n\n` +
           `当前配额方案: ${quotaInfo.quotaDescription}\n` +
           `已使用: ${quotaInfo.usedQuota} 个项目\n` +
-          `配额上限: ${quotaInfo.totalQuota} 个项目\n\n` +
-          `升级到Pro版本可获得 500 个项目配额`);
+          `配额上限: ${quotaInfo.totalQuota} 个项目`;
+
+        // 如果是严格配额控制，添加特殊说明
+        if (quotaInfo.strictQuotaEnforced) {
+          errorMessage += `\n\n⚠️ 严格配额模式：一旦达到配额上限，删除项目也不会释放配额`;
+          errorMessage += `\n💡 解决方案：升级到Pro版本可获得 500 个项目配额`;
+        } else {
+          errorMessage += `\n\n升级到Pro版本可获得 500 个项目配额`;
+        }
+
+        alert(errorMessage);
         return;
       }
     }
@@ -514,7 +523,7 @@ export default function TaskManagementPage() {
       try {
         quotaService.checkProjectQuota(projects, user?.isPro || false);
       } catch (error: any) {
-        if (error.code === 'QUOTA_EXCEEDED') {
+        if (error.code === 'QUOTA_EXCEEDED' || error.code === 'STRICT_QUOTA_EXCEEDED') {
           alert(error.message);
           return;
         }
@@ -631,7 +640,7 @@ export default function TaskManagementPage() {
     setIsAddProjectDialogOpen(true);
   };
 
-  // 组件的JSX渲染部分
+  // JSX 渲染部分
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* 头部导航 */}
@@ -809,7 +818,7 @@ export default function TaskManagementPage() {
               variant="secondary"
               onClick={handleOpenAddProjectDialog}
               className={(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 return warningLevel === 'danger' ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300' :
                        warningLevel === 'warning' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300' : '';
@@ -818,10 +827,10 @@ export default function TaskManagementPage() {
               <PlusCircle className="w-4 h-4 mr-2" />
               添加项目
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 if (warningLevel === 'danger') {
-                  return <span className="ml-2 text-xs">(配额已满)</span>;
+                  return <span className="ml-2 text-xs">({quotaInfo.strictQuotaEnforced ? '严格配额' : '配额已满'})</span>;
                 } else if (warningLevel === 'warning') {
                   return <span className="ml-2 text-xs">({quotaInfo.remainingQuota}剩余)</span>;
                 }
@@ -838,9 +847,9 @@ export default function TaskManagementPage() {
             <Card className="p-4 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">项目列表</h2>
 
-              {/* 配额信息显示 */}
+              {/* 配额信息显示（使用严格配额控制） */}
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 const statusColor = quotaService.getQuotaStatusColor(quotaInfo);
 
@@ -866,9 +875,19 @@ export default function TaskManagementPage() {
                     <div className="text-xs opacity-75">
                       {quotaInfo.remainingQuota > 0
                         ? `还可创建 ${quotaInfo.remainingQuota} 个项目`
-                        : '配额已满，请升级到Pro版本'
+                        : quotaInfo.strictQuotaEnforced
+                          ? `严格配额模式：删除项目也不会释放配额`
+                          : '配额已满，请升级到Pro版本'
                       }
                     </div>
+                    {/* 严格配额状态显示 */}
+                    {quotaInfo.strictQuotaEnforced && (
+                      <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                        <div className="font-medium mb-1">⚠️ 严格配额模式已生效</div>
+                        <div>已达到历史配额上限 ({quotaInfo.quotaHistory.peakProjectCount} 个项目)</div>
+                        <div>删除项目不会释放新配额</div>
+                      </div>
+                    )}
                     {!user?.isPro && quotaInfo.upgradeAvailable && (
                       <div className="mt-2">
                         <Button
@@ -925,27 +944,28 @@ export default function TaskManagementPage() {
                         </div>
                       </button>
                       <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditProject(project)}>
-                          编辑
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenDeleteDialog(project.id)}>
-                          删除
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditProject(project)}>
+                            编辑
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenDeleteDialog(project.id)}>
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* 排序控制 */}
@@ -1016,6 +1036,27 @@ export default function TaskManagementPage() {
                     onTaskEdit={handleEditTask}
                     onTaskDelete={(taskId) => {
                       const updatedTasks = tasks.filter(task => task.id !== taskId);
+                      setTasks(updatedTasks);
+                      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                    }}
+                    onTaskCreate={(newTaskData) => {
+                      const now = new Date().toISOString();
+                      const newTask: Task = {
+                        id: `task-${now}-${Math.random().toString(36).substr(2, 9)}`,
+                        ...newTaskData,
+                        createdAt: now,
+                        comments: [],
+                      };
+
+                      // 更新任务 scheduledSlots 中的 taskId
+                      if (newTask.scheduledSlots) {
+                        newTask.scheduledSlots = newTask.scheduledSlots.map(slot => ({
+                          ...slot,
+                          taskId: newTask.id
+                        }));
+                      }
+
+                      const updatedTasks = [...tasks, newTask];
                       setTasks(updatedTasks);
                       localStorage.setItem('tasks', JSON.stringify(updatedTasks));
                     }}

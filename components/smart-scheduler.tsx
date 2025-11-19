@@ -14,6 +14,8 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, Clock, Settings, Play, RefreshCw, AlertCircle, CheckCircle, Brain, CalendarDays } from 'lucide-react';
 import { Task, WorkPreferences, TimeSlot } from '@/types/task';
 import { SmartSchedulerService } from '@/app/lib/smart-scheduler-service';
+import { timeZoneService } from '@/app/lib/timezone-service';
+import { TimeZoneSelector } from '@/components/ui/timezone-selector';
 
 interface SmartSchedulerProps {
   tasks: Task[];
@@ -106,6 +108,24 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* 时区选择器 */}
+          <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-sm">工作时区设置</h3>
+                <p className="text-xs text-muted-foreground">任务时间安排将基于您选择的时区</p>
+              </div>
+              <TimeZoneSelector
+                variant="compact"
+                showOffset={true}
+                onTimeZoneChange={(timeZoneId, timeZoneInfo) => {
+                  // 时区变化时可以重新安排任务或刷新显示
+                  console.log('Time zone changed for scheduling:', timeZoneId);
+                }}
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
@@ -307,24 +327,24 @@ function ScheduledTaskCard({ task }: { task: Task }) {
 
   const startTime = new Date(slot.startTime);
   const endTime = new Date(slot.endTime);
+
+  // 使用时区服务格式化时间和日期
   const dateStr = startTime.toLocaleDateString('zh-CN', {
     month: 'short',
     day: 'numeric',
     weekday: 'short'
   });
-  const timeStr = `${startTime.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })} - ${endTime.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })}`;
+
+  const timeStr = `${timeZoneService.formatDateTimeSimple(startTime, { format: 'time-only' })} - ${timeZoneService.formatDateTimeSimple(endTime, { format: 'time-only' })}`;
 
   return (
     <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
       <div className="flex-1">
         <div className="font-medium">{task.title}</div>
         <div className="text-sm text-muted-foreground">{dateStr}</div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {timeZoneService.formatDateTimeSimple(startTime, { format: 'date-only' })}
+        </div>
       </div>
       <div className="text-right">
         <div className="text-sm font-medium">{timeStr}</div>
