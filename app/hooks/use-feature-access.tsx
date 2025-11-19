@@ -134,7 +134,8 @@ const PUBLIC_FEATURES: FeatureType[] = [
 
 // 免费用户功能（需要登录但免费）
 const FREE_USER_FEATURES: FeatureType[] = [
-  'task-list'
+  'task-list',
+  'kanban'
 ]
 
 // 功能名称映射
@@ -156,7 +157,7 @@ const FEATURE_NAMES: Record<FeatureType, string> = {
 function getUpgradeMessage(feature: FeatureType): string {
   const messages: Record<FeatureType, string> = {
     'task-list': '', // 免费功能，不需要升级提示
-    'kanban': '升级到Pro版本解锁看板视图，拖拽式管理您的任务',
+    'kanban': '', // 免费功能，不需要升级提示
     'calendar': '升级到Pro版本解锁日历视图，可视化您的时间安排',
     'scheduler': '升级到Pro版本解锁智能安排，AI帮您自动规划任务时间',
     'analytics': '升级到Pro版本解锁数据分析，深入了解您的工作效率',
@@ -175,7 +176,7 @@ function getUpgradeMessage(feature: FeatureType): string {
 function getCTAText(feature: FeatureType): string {
   const texts: Record<FeatureType, string> = {
     'task-list': '', // 免费功能，不需要CTA
-    'kanban': '升级解锁看板',
+    'kanban': '', // 免费功能，不需要CTA
     'calendar': '升级解锁日历',
     'scheduler': '升级解锁智能安排',
     'analytics': '升级解锁分析',
