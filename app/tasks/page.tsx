@@ -25,11 +25,20 @@ import { TimelineCalendar } from '@/components/timeline-calendar';
 import { Task, categoryLabels, priorityLabels, statusLabels, energyLevelLabels } from '@/types/task';
 import { Project, projectStatusLabels } from '@/types/project';
 import { useAuth } from '@/app/hooks/use-auth';
+import { useFeatureAccess } from '@/app/hooks/use-feature-access';
 import { quotaService } from '@/app/lib/quota-service';
 
 export default function TaskManagementPage() {
   // 认证状态
   const { user, isAuthenticated, login, logout } = useAuth();
+
+  // 功能访问控制
+  const {
+    canAccessKanban,
+    canAccessCalendar,
+    canAccessScheduler,
+    renderFeatureGate
+  } = useFeatureAccess();
 
   // 使用固定语言避免hydration问题
   const [isClient, setIsClient] = useState(false);
@@ -659,9 +668,32 @@ export default function TaskManagementPage() {
             <Link href="/tasks" className="text-sm text-foreground font-medium">
               {translations.navigation.tasks}
             </Link>
-            <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {translations.navigation.analytics}
-            </Link>
+            {canAccessScheduler ? (
+              <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {translations.navigation.analytics}
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  // 存储购买意图
+                  if (user && user.email) {
+                    localStorage.setItem('pending_purchase', JSON.stringify({
+                      planId: 'pro-monthly',
+                      feature: '数据分析',
+                      timestamp: Date.now(),
+                      returnTo: '/analytics'
+                    }))
+                  }
+                  // 跳转到定价页面
+                  window.location.href = '/pricing'
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                title="需要Pro版本"
+              >
+                {translations.navigation.analytics}
+                <span className="text-xs">🔒</span>
+              </button>
+            )}
             {isAuthenticated ? (
               <Button variant="outline" size="sm" className="ml-2" onClick={() => logout()}>
                 {translations.navigation.logout}
@@ -687,7 +719,30 @@ export default function TaskManagementPage() {
         <nav className="md:hidden bg-card border-b border-border py-4 px-4 flex flex-col gap-4">
           <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.home}</Link>
           <Link href="/tasks" className="font-medium text-foreground border-l-4 border-primary pl-2">{translations.navigation.tasks}</Link>
-          <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.analytics}</Link>
+          {canAccessScheduler ? (
+            <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.analytics}</Link>
+          ) : (
+            <button
+              onClick={() => {
+                // 存储购买意图
+                if (user && user.email) {
+                  localStorage.setItem('pending_purchase', JSON.stringify({
+                    planId: 'pro-monthly',
+                    feature: '数据分析',
+                    timestamp: Date.now(),
+                    returnTo: '/analytics'
+                  }))
+                }
+                // 跳转到定价页面
+                window.location.href = '/pricing'
+              }}
+              className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-left"
+              title="需要Pro版本"
+            >
+              {translations.navigation.analytics}
+              <span className="text-xs">🔒</span>
+            </button>
+          )}
         </nav>
       )}
 
@@ -738,29 +793,50 @@ export default function TaskManagementPage() {
               <Button
                 variant={viewMode === 'kanban' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('kanban')}
-                className="h-8 px-3"
+                onClick={() => {
+                  if (canAccessKanban) {
+                    setViewMode('kanban');
+                  }
+                }}
+                disabled={!canAccessKanban}
+                className={`h-8 px-3 ${!canAccessKanban ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={!canAccessKanban ? '需要Pro版本' : '看板视图'}
               >
                 <LayoutGrid className="w-4 h-4 mr-2" />
                 看板
+                {!canAccessKanban && <span className="ml-1 text-xs">🔒</span>}
               </Button>
               <Button
                 variant={viewMode === 'calendar' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('calendar')}
-                className="h-8 px-3"
+                onClick={() => {
+                  if (canAccessCalendar) {
+                    setViewMode('calendar');
+                  }
+                }}
+                disabled={!canAccessCalendar}
+                className={`h-8 px-3 ${!canAccessCalendar ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={!canAccessCalendar ? '需要Pro版本' : '日历视图'}
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 日历
+                {!canAccessCalendar && <span className="ml-1 text-xs">🔒</span>}
               </Button>
               <Button
                 variant={viewMode === 'scheduler' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('scheduler')}
-                className="h-8 px-3"
+                onClick={() => {
+                  if (canAccessScheduler) {
+                    setViewMode('scheduler');
+                  }
+                }}
+                disabled={!canAccessScheduler}
+                className={`h-8 px-3 ${!canAccessScheduler ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={!canAccessScheduler ? '需要Pro版本' : '智能安排'}
               >
                 <Brain className="w-4 h-4 mr-2" />
                 智能安排
+                {!canAccessScheduler && <span className="ml-1 text-xs">🔒</span>}
               </Button>
             </div>
 
@@ -1001,91 +1077,106 @@ export default function TaskManagementPage() {
           <div className="md:col-span-3">
             {/* 根据视图模式显示不同内容 */}
             {viewMode === 'kanban' ? (
-              /* 看板视图 */
-              <div className="h-full">
-                {showTasks ? (
-                  <PersonalKanbanBoard
-                    tasks={filteredTasks}
-                    projects={projects}
-                    onEditTask={handleEditTask}
-                    onViewTask={handleOpenTaskDetail}
-                    onStatusChange={handleStatusChange}
-                  />
-                ) : (
-                  <Card className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <h3 className="text-lg font-medium mb-2">加载中...</h3>
-                  </Card>
-                )}
-              </div>
+              /* 看板视图 - 需要Pro版本 */
+              renderFeatureGate({
+                feature: 'kanban',
+                children: (
+                  <div className="h-full">
+                    {showTasks ? (
+                      <PersonalKanbanBoard
+                        tasks={filteredTasks}
+                        projects={projects}
+                        onEditTask={handleEditTask}
+                        onViewTask={handleOpenTaskDetail}
+                        onStatusChange={handleStatusChange}
+                      />
+                    ) : (
+                      <Card className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                      </Card>
+                    )}
+                  </div>
+                )
+              })
             ) : viewMode === 'calendar' ? (
-              /* 日历视图 */
-              <div className="h-full">
-                {showTasks ? (
-                  <TimelineCalendar
-                    tasks={filteredTasks}
-                    onTaskUpdate={(updatedTask) => {
-                      setTasks(prev => {
-                        const updatedTasks = prev.map(task =>
-                          task.id === updatedTask.id ? updatedTask : task
-                        );
-                        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-                        return updatedTasks;
-                      });
-                    }}
-                    onTaskEdit={handleEditTask}
-                    onTaskDelete={(taskId) => {
-                      const updatedTasks = tasks.filter(task => task.id !== taskId);
-                      setTasks(updatedTasks);
-                      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-                    }}
-                    onTaskCreate={(newTaskData) => {
-                      const now = new Date().toISOString();
-                      const newTask: Task = {
-                        id: `task-${now}-${Math.random().toString(36).substr(2, 9)}`,
-                        ...newTaskData,
-                        createdAt: now,
-                        comments: [],
-                      };
+              /* 日历视图 - 需要Pro版本 */
+              renderFeatureGate({
+                feature: 'calendar',
+                children: (
+                  <div className="h-full">
+                    {showTasks ? (
+                      <TimelineCalendar
+                        tasks={filteredTasks}
+                        onTaskUpdate={(updatedTask) => {
+                          setTasks(prev => {
+                            const updatedTasks = prev.map(task =>
+                              task.id === updatedTask.id ? updatedTask : task
+                            );
+                            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                            return updatedTasks;
+                          });
+                        }}
+                        onTaskEdit={handleEditTask}
+                        onTaskDelete={(taskId) => {
+                          const updatedTasks = tasks.filter(task => task.id !== taskId);
+                          setTasks(updatedTasks);
+                          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                        }}
+                        onTaskCreate={(newTaskData) => {
+                          const now = new Date().toISOString();
+                          const newTask: Task = {
+                            id: `task-${now}-${Math.random().toString(36).substr(2, 9)}`,
+                            ...newTaskData,
+                            createdAt: now,
+                            comments: [],
+                          };
 
-                      // 更新任务 scheduledSlots 中的 taskId
-                      if (newTask.scheduledSlots) {
-                        newTask.scheduledSlots = newTask.scheduledSlots.map(slot => ({
-                          ...slot,
-                          taskId: newTask.id
-                        }));
-                      }
+                          // 更新任务 scheduledSlots 中的 taskId
+                          if (newTask.scheduledSlots) {
+                            newTask.scheduledSlots = newTask.scheduledSlots.map(slot => ({
+                              ...slot,
+                              taskId: newTask.id
+                            }));
+                          }
 
-                      const updatedTasks = [...tasks, newTask];
-                      setTasks(updatedTasks);
-                      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-                    }}
-                  />
-                ) : (
-                  <Card className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <h3 className="text-lg font-medium mb-2">加载中...</h3>
-                  </Card>
-                )}
-              </div>
+                          const updatedTasks = [...tasks, newTask];
+                          setTasks(updatedTasks);
+                          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                        }}
+                      />
+                    ) : (
+                      <Card className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                      </Card>
+                    )}
+                  </div>
+                )
+              })
             ) : viewMode === 'scheduler' ? (
-              /* 智能安排视图 */
-              <div className="h-full">
-                {showTasks ? (
-                  <SmartScheduler
-                    tasks={filteredTasks}
-                    onTasksUpdate={(updatedTasks) => {
-                      setTasks(updatedTasks);
-                      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-                    }}
-                  />
-                ) : (
-                  <Card className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <h3 className="text-lg font-medium mb-2">加载中...</h3>
-                  </Card>
-                )}
-              </div>
+              /* 智能安排视图 - 需要Pro版本 */
+              renderFeatureGate({
+                feature: 'scheduler',
+                children: (
+                  <div className="h-full">
+                    {showTasks ? (
+                      <SmartScheduler
+                        tasks={filteredTasks}
+                        onTasksUpdate={(updatedTasks) => {
+                          setTasks(updatedTasks);
+                          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                        }}
+                      />
+                    ) : (
+                      <Card className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                      </Card>
+                    )}
+                  </div>
+                )
+              })
             ) : (
               /* 列表视图 */
               <>
@@ -1751,10 +1842,34 @@ export default function TaskManagementPage() {
               <CheckSquare className="h-4 w-4" />
               <span>任务管理</span>
             </Link>
-            <Link href="/analytics" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
-              <BarChart2 className="h-4 w-4" />
-              <span>数据分析</span>
-            </Link>
+            {canAccessScheduler ? (
+              <Link href="/analytics" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
+                <BarChart2 className="h-4 w-4" />
+                <span>数据分析</span>
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  // 存储购买意图
+                  if (user && user.email) {
+                    localStorage.setItem('pending_purchase', JSON.stringify({
+                      planId: 'pro-monthly',
+                      feature: '数据分析',
+                      timestamp: Date.now(),
+                      returnTo: '/analytics'
+                    }))
+                  }
+                  // 跳转到定价页面
+                  window.location.href = '/pricing'
+                }}
+                className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted w-full text-left"
+                title="需要Pro版本"
+              >
+                <BarChart2 className="h-4 w-4" />
+                <span>数据分析</span>
+                <span className="text-xs">🔒</span>
+              </button>
+            )}
           </nav>
 
           <div className="border-t border-border mt-6 pt-6">

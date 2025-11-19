@@ -12,10 +12,12 @@ import { redirect } from 'next/navigation';
 import { LanguageService, analyticsTranslations } from '@/app/lib/language-service';
 import { PersonalWorkStats } from '@/components/personal-work-stats';
 import { useAuth } from '@/app/hooks/use-auth';
+import { useFeatureAccess } from '@/app/hooks/use-feature-access';
 
 export default function AnalyticsPage() {
   // 认证状态
   const { user, isAuthenticated, login, logout } = useAuth();
+  const { canAccessAnalytics, renderFeatureGate } = useFeatureAccess();
 
   // 状态管理
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -255,14 +257,17 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         )}
-        
-        {/* 主要内容 */}
-        {isAuthenticated && (
-          <div className="space-y-8">
-            {/* 个人工作统计 */}
-            <PersonalWorkStats tasks={tasks} />
-          </div>
-        )}
+
+        {/* 功能访问控制 */}
+        {isAuthenticated && renderFeatureGate({
+          feature: 'analytics',
+          children: (
+            <div className="space-y-8">
+              {/* 个人工作统计 */}
+              <PersonalWorkStats tasks={tasks} />
+            </div>
+          )
+        })}
       </main>
       
       {/* 移动端导航对话框 */}

@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/app/hooks/use-auth';
+import { useFeatureAccess } from '@/app/hooks/use-feature-access';
 import { NotificationButton } from '@/components/ui/notification-button';
 import { LogOut, UserCircle2, Menu, CreditCard } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -20,6 +21,7 @@ import { LanguageService, analyticsTranslations } from '@/app/lib/language-servi
  */
 export function AuthNavigation() {
   const { user, isAuthenticated, loginWithGoogle, loginWithGitHub, logout, isPro } = useAuth();
+  const { canAccessAnalytics } = useFeatureAccess();
   const isMobile = useIsMobile();
   // 使用Next.js提供的usePathname钩子获取当前路径，避免使用window对象
   const pathname = usePathname();
@@ -55,12 +57,34 @@ export function AuthNavigation() {
         >
           {translations.navigation.tasks}
         </Link>
+        {canAccessAnalytics ? (
           <Link
-          href="/analytics"
-          className={`text-sm transition-colors ${currentPath === '/analytics' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          {translations.navigation.analytics}
-        </Link>
+            href="/analytics"
+            className={`text-sm transition-colors ${currentPath === '/analytics' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {translations.navigation.analytics}
+          </Link>
+        ) : (
+          <button
+            onClick={() => {
+              // 存储购买意图
+              if (user && user.email) {
+                localStorage.setItem('pending_purchase', JSON.stringify({
+                  planId: 'pro-monthly',
+                  feature: '数据分析',
+                  timestamp: Date.now(),
+                  returnTo: '/analytics'
+                }));
+              }
+              // 跳转到定价页面
+              window.location.href = '/pricing';
+            }}
+            className={`text-sm transition-colors text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer p-0 flex items-center gap-1`}
+          >
+            <span>{translations.navigation.analytics}</span>
+            <span className="text-xs opacity-70">🔒</span>
+          </button>
+        )}
         <button
           onClick={() => {
             if (currentPath === '/') {
@@ -137,12 +161,34 @@ export function AuthNavigation() {
         >
           {translations.navigation.tasks}
         </Link>
-        <Link 
-          href="/analytics" 
-          className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
-        >
-          {translations.navigation.analytics}
-        </Link>
+        {canAccessAnalytics ? (
+          <Link
+            href="/analytics"
+            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors"
+          >
+            {translations.navigation.analytics}
+          </Link>
+        ) : (
+          <button
+            onClick={() => {
+              // 存储购买意图
+              if (user && user.email) {
+                localStorage.setItem('pending_purchase', JSON.stringify({
+                  planId: 'pro-monthly',
+                  feature: '数据分析',
+                  timestamp: Date.now(),
+                  returnTo: '/analytics'
+                }));
+              }
+              // 跳转到定价页面
+              window.location.href = '/pricing';
+            }}
+            className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors w-full text-left bg-transparent border-none cursor-pointer flex items-center justify-between"
+          >
+            <span>{translations.navigation.analytics}</span>
+            <span className="text-xs opacity-70">🔒</span>
+          </button>
+        )}
           <button
           onClick={() => {
             const pricingSection = document.getElementById('pricing');
