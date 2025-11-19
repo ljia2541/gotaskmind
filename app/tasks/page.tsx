@@ -490,7 +490,7 @@ export default function TaskManagementPage() {
   const handleOpenAddProjectDialog = () => {
     // 检查项目配额（使用严格配额控制）
     if (!editingProject) {
-      const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
+      const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
 
       if (!quotaInfo.canCreateMore) {
         // 显示配额已满的错误信息
@@ -894,7 +894,7 @@ export default function TaskManagementPage() {
               variant="secondary"
               onClick={handleOpenAddProjectDialog}
               className={(() => {
-                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 return warningLevel === 'danger' ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300' :
                        warningLevel === 'warning' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300' : '';
@@ -903,7 +903,7 @@ export default function TaskManagementPage() {
               <PlusCircle className="w-4 h-4 mr-2" />
               添加项目
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 if (warningLevel === 'danger') {
                   return <span className="ml-2 text-xs">({quotaInfo.strictQuotaEnforced ? '严格配额' : '配额已满'})</span>;
@@ -925,7 +925,7 @@ export default function TaskManagementPage() {
 
               {/* 配额信息显示（使用严格配额控制） */}
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfoWithStrictControl(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 const statusColor = quotaService.getQuotaStatusColor(quotaInfo);
 

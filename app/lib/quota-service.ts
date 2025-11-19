@@ -132,7 +132,7 @@ export class QuotaService {
   }
 
   /**
-   * 获取配额使用情况的详细信息
+   * 获取配额使用情况的详细信息 - 实现严格配额控制
    */
   public getQuotaInfo(projects: Project[], isPro: boolean): {
     totalQuota: number;
@@ -144,22 +144,54 @@ export class QuotaService {
     planName: string;
     canCreateMore: boolean;
     upgradeAvailable: boolean;
+    strictQuotaEnforced: boolean;
+    quotaHistory: ReturnType<QuotaService['getQuotaHistory']>;
   } {
     const quotaLimit = this.getProjectQuota(isPro);
     const currentCount = projects.length;
-    const remaining = quotaLimit - currentCount;
-    const usagePercentage = Math.round((currentCount / quotaLimit) * 100);
+    const hasReachedQuotaBefore = this.hasReachedQuotaBefore();
+
+    // 严格配额控制：如果免费用户之前达到过配额上限，则配额永久锁定
+    let remaining: number;
+    let usagePercentage: number;
+    let canCreateMore: boolean;
+    let strictQuotaEnforced: boolean;
+
+    if (!isPro && hasReachedQuotaBefore) {
+      // 严格配额模式：配额永久锁定为0
+      remaining = 0;
+      usagePercentage = 100;
+      canCreateMore = false;
+      strictQuotaEnforced = true;
+    } else {
+      // 正常配额计算
+      remaining = quotaLimit - currentCount;
+      usagePercentage = Math.round((currentCount / quotaLimit) * 100);
+      canCreateMore = remaining > 0;
+      strictQuotaEnforced = false;
+    }
+
+    // 如果当前项目数量达到或超过配额，记录到历史中（仅免费版）
+    if (!isPro && currentCount >= quotaLimit && !hasReachedQuotaBefore) {
+      this.recordQuotaReached(currentCount);
+    }
+
+    const quotaHistory = this.getQuotaHistory();
 
     return {
       totalQuota: quotaLimit,
       usedQuota: currentCount,
-      remainingQuota: remaining,
+      remainingQuota: Math.max(0, remaining),
       usagePercentage,
-      quotaDescription: this.getQuotaDescription(isPro),
+      quotaDescription: strictQuotaEnforced ?
+        this.getQuotaDescription(isPro) + '（严格配额已生效）' :
+        this.getQuotaDescription(isPro),
       isPro,
       planName: isPro ? 'Pro' : 'Free',
-      canCreateMore: remaining > 0,
-      upgradeAvailable: !isPro && currentCount >= this.QUOTA_LIMITS.free.projects * 0.8 // 在80%时提示升级
+      canCreateMore,
+      upgradeAvailable: !isPro && (currentCount >= this.QUOTA_LIMITS.free.projects * 0.8 || strictQuotaEnforced),
+      strictQuotaEnforced,
+      quotaHistory
     };
   }
 
@@ -371,31 +403,20 @@ export class QuotaService {
   }
 
   /**
-   * 更新getQuotaInfo方法以支持严格配额
+   * 获取严格配额状态描述
    */
-  public getQuotaInfoWithStrictControl(projects: Project[], isPro: boolean): ReturnType<QuotaService['getQuotaInfo']> & {
-    strictQuotaEnforced: boolean;
-    quotaHistory: ReturnType<QuotaService['getQuotaHistory']>;
-    strictQuotaStatus: string;
-  } {
-    const baseQuotaInfo = this.getQuotaInfo(projects, isPro);
-    const quotaHistory = this.getQuotaHistory();
-    const strictQuotaEnforced = !isPro && quotaHistory.hasReachedQuota;
-    const strictQuotaStatus = this.getStrictQuotaStatus(isPro);
-
-    // 如果严格配额已生效，调整剩余配额为0
-    if (strictQuotaEnforced) {
-      baseQuotaInfo.remainingQuota = 0;
-      baseQuotaInfo.canCreateMore = false;
-      baseQuotaInfo.usagePercentage = 100;
+  public getStrictQuotaStatus(isPro: boolean): string {
+    if (isPro) {
+      return 'Pro版本无配额限制';
     }
 
-    return {
-      ...baseQuotaInfo,
-      strictQuotaEnforced,
-      quotaHistory,
-      strictQuotaStatus
-    };
+    const quotaHistory = this.getQuotaHistory();
+    if (quotaHistory.hasReachedQuota) {
+      const days = quotaHistory.daysSinceQuotaReached || 0;
+      return `严格配额模式已生效 ${days} 天`;
+    }
+
+    return '标准配额模式';
   }
 }
 

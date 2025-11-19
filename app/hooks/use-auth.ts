@@ -292,9 +292,19 @@ export function useAuth() {
       // 2. 无论存储是否成功，都保存到内存
       saveToMemoryStore(cacheKey, newSubscription);
 
-      // 3. 如果是Pro订阅，确保状态正确传播
+      // 3. 如果是Pro订阅，确保状态正确传播并清除配额限制
       if (newSubscription.planId === 'pro-monthly' || newSubscription.planId === 'pro-annual') {
         console.log('🎉 Pro订阅已激活！');
+
+        // 清除免费配额历史记录（升级到Pro时）
+        try {
+          import('../lib/quota-service').then(({ quotaService }) => {
+            quotaService.clearQuotaHistory();
+            console.log('🧹 已清除免费配额历史记录，Pro用户无配额限制');
+          });
+        } catch (error) {
+          console.error('❌ 清除配额历史记录失败:', error);
+        }
 
         // 多种方式确保状态同步，增加重试机制
         [100, 500, 1000, 2000, 5000].forEach(delay => {
@@ -419,6 +429,18 @@ export function useAuth() {
 
             if (data.success && data.hasPendingSubscription && data.subscription) {
               console.log('🎉 发现待处理订阅，自动应用升级:', data.subscription)
+
+              // 如果是Pro订阅，先清除配额历史记录
+              if (data.subscription.planId === 'pro-monthly' || data.subscription.planId === 'pro-annual') {
+                try {
+                  import('../lib/quota-service').then(({ quotaService }) => {
+                    quotaService.clearQuotaHistory();
+                    console.log('🧹 已清除免费配额历史记录（自动升级）');
+                  });
+                } catch (error) {
+                  console.error('❌ 清除配额历史记录失败:', error);
+                }
+              }
 
               // 自动应用订阅升级
               const newSubscription: Subscription = {
