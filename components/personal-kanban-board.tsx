@@ -480,7 +480,7 @@ function TaskListItem({ task, onEdit, onView, onStatusChange }: TaskListItemProp
     }`}>
       {/* 顶部：标题和状态操作 */}
       <div className="flex items-center justify-between mb-2">
-        <h4 className={`text-sm font-medium truncate flex-1 mr-2 ${isCompleted ? 'line-through' : ''}`}>
+        <h4 className="text-sm font-medium truncate flex-1 mr-2">
           {task.title}
         </h4>
         <div className="flex items-center gap-2 flex-shrink-0">
