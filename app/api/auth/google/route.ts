@@ -11,15 +11,25 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    // 配置回调URL
-    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/google/callback`;
+    // 配置回调URL - 确保使用正确的URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const redirectTo = `${baseUrl}/api/auth/google/callback`;
+
+    console.log('Google登录 - 配置信息:', {
+      baseUrl,
+      redirectTo,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+    });
 
     // 生成Google OAuth登录URL
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
-        // 可选：请求额外的权限范围
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
         scopes: 'openid profile email',
       },
     });
