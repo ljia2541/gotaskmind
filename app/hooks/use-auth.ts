@@ -592,7 +592,7 @@ export function useAuth() {
     }
   }, [user, forceRefreshSubscription]);
 
-  // 检查用户会话 - 使用Supabase，添加防抖机制
+  // 检查用户会话 - 使用Supabase，添加防抖机制和状态检测
   const checkAuth = useCallback(() => {
     // 防止重复调用
     if (authCheckRef.current) {
@@ -601,6 +601,8 @@ export function useAuth() {
 
     authCheckRef.current = true;
 
+    console.log('🔍 开始检查认证状态...');
+
     try {
       // 清除可能存在的旧用户会话cookie
       if (document.cookie.includes('user_session=')) {
@@ -608,63 +610,128 @@ export function useAuth() {
         console.log('已清除旧的用户会话cookie');
       }
 
-      // 从Supabase获取当前用户
+      // 检查URL中是否有认证参数（OAuth回调）
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasAuthParams = urlParams.has('access_token') || urlParams.has('refresh_token') || urlParams.has('code');
+
+      console.log('🔗 URL参数检测:', {
+        hasAuthParams,
+        searchParams: Object.fromEntries(urlParams.entries())
+      });
+
+      // 优先检查Supabase客户端的当前会话
       const supabase = createSupabaseClient();
 
-      // 检查localStorage中的用户信息或直接调用API检查会话
-      fetch('/api/auth/session', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin'
-      })
-        .then(response => {
-          if (!response.ok) {
-            // 401是正常的未登录状态，不是错误
-            if (response.status === 401) {
-              return { success: false, user: null, isAuthenticated: false };
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.user) {
-            setUser({
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.name || data.user.email.split('@')[0],
-              picture: data.user.picture
-            });
+      // 先检查本地Supabase会话
+      supabase.auth.getUser().then(({ data: userData, error: userError }) => {
+        if (!userError && userData.user) {
+          console.log('✅ 从Supabase客户端获取到用户:', userData.user.email);
+          setUser({
+            id: userData.user.id,
+            email: userData.user.email || '',
+            name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || '用户',
+            picture: userData.user.user_metadata?.picture || userData.user.user_metadata?.avatar_url
+          });
 
-            // 获取用户订阅状态
-            loadSubscriptionStatus(data.user.id, data.user.email);
-          } else {
+          loadSubscriptionStatus(userData.user.id, userData.user.email);
+          setIsLoading(false);
+          authCheckRef.current = false;
+          return;
+        }
+
+        // 如果本地没有会话，检查服务器端会话
+        console.log('🔄 本地无会话，检查服务器端...');
+
+        fetch('/api/auth/session', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'same-origin'
+        })
+          .then(response => {
+            console.log('📡 会话检查响应状态:', response.status);
+
+            if (!response.ok) {
+              // 401是正常的未登录状态，不是错误
+              if (response.status === 401) {
+                console.log('ℹ️ 用户未登录（正常状态）');
+                return { success: false, user: null, isAuthenticated: false };
+              }
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('📋 会话检查响应数据:', data);
+
+            if (data.user) {
+              console.log('✅ 从服务器获取到用户:', data.user.email);
+              setUser({
+                id: data.user.id,
+                email: data.user.email,
+                name: data.user.name || data.user.email.split('@')[0],
+                picture: data.user.picture
+              });
+
+              // 获取用户订阅状态
+              loadSubscriptionStatus(data.user.id, data.user.email);
+            } else {
+              console.log('❌ 服务器返回无用户数据');
+              setUser(null);
+              setSubscription(null);
+            }
+          })
+          .catch(error => {
+            // 检查是否是401错误（正常的未登录状态）
+            if (error.message.includes('HTTP error! status: 401')) {
+              console.log('ℹ️ 用户未登录（这是正常状态）');
+            } else {
+              console.error('❌ 获取用户会话失败:', error);
+            }
+            // 设置默认状态，避免无限加载
             setUser(null);
             setSubscription(null);
-          }
+          })
+          .finally(() => {
+            setIsLoading(false);
+            // 重置防抖标记，允许下次调用
+            setTimeout(() => {
+              authCheckRef.current = false;
+            }, 1000);
+          });
+      }).catch(error => {
+        console.error('❌ Supabase客户端检查失败:', error);
+
+        // 回退到仅服务器端检查
+        fetch('/api/auth/session', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
         })
-        .catch(error => {
-          // 检查是否是401错误（正常的未登录状态）
-          if (error.message.includes('HTTP error! status: 401')) {
-            console.log('用户未登录（这是正常状态）');
-          } else {
-            console.error('获取用户会话失败:', error);
-          }
-          // 设置默认状态，避免无限加载
-          setUser(null);
-          setSubscription(null);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          // 重置防抖标记，允许下次调用
-          setTimeout(() => {
-            authCheckRef.current = false;
-          }, 1000);
-        });
+          .then(response => response.ok ? response.json() : { user: null })
+          .then(data => {
+            if (data.user) {
+              setUser({
+                id: data.user.id,
+                email: data.user.email,
+                name: data.user.name || data.user.email.split('@')[0],
+                picture: data.user.picture
+              });
+              loadSubscriptionStatus(data.user.id, data.user.email);
+            } else {
+              setUser(null);
+              setSubscription(null);
+            }
+          })
+          .catch(error => console.error('❌ 回退检查也失败:', error))
+          .finally(() => {
+            setIsLoading(false);
+            setTimeout(() => { authCheckRef.current = false; }, 1000);
+          });
+      });
     } catch (error) {
-      console.error('检查用户会话失败:', error);
+      console.error('❌ 检查用户会话失败:', error);
       setUser(null);
       setIsLoading(false);
       // 重置防抖标记
@@ -791,6 +858,39 @@ export function useAuth() {
     }, 100);
 
     return () => clearTimeout(timer);
+  }, [checkAuth]);
+
+  // 检测OAuth回调并立即刷新认证状态
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAuthCallback = urlParams.has('access_token') ||
+                           urlParams.has('refresh_token') ||
+                           urlParams.has('code') ||
+                           urlParams.has('authError');
+
+    if (hasAuthCallback) {
+      console.log('🔄 检测到OAuth回调，立即刷新认证状态');
+
+      // 立即检查认证状态
+      setTimeout(() => {
+        checkAuth();
+      }, 500);
+
+      // 再次检查（确保cookie设置完成）
+      setTimeout(() => {
+        checkAuth();
+      }, 1500);
+
+      // 第三次检查（最终确认）
+      setTimeout(() => {
+        checkAuth();
+      }, 3000);
+
+      // 清理URL参数
+      if (!urlParams.has('authError')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }, [checkAuth]);
 
   // 用户登录成功后检查待处理的购买意图
