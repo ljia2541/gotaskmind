@@ -608,6 +608,9 @@ export default function TaskManagementPage() {
       // 7. 显示成功提示
       toast.success(`项目"${projectToDelete?.title}"已删除，同时删除了${associatedTasks.length}个关联任务`);
 
+      // 8. 关闭删除确认对话框
+      setIsDeleteDialogOpen(false);
+
       console.log('删除操作完成');
 
     } catch (error) {
