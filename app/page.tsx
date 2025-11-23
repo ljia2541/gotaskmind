@@ -693,72 +693,57 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance">
-              Trusted by individual efficiency seekers worldwide
+              Perfect for Various Project Types
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed">
-              Learn how individual users are transforming their work through AI-driven intelligent planning.
+              Our AI-powered platform adapts to different industries and project management needs.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div className="bg-card border border-border rounded-xl p-8 transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:translate-y-[-4px]">
-              <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <span className="text-lg font-bold text-accent">Tech</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">💻 Solo Developer</div>
-                    <div className="text-sm text-muted-foreground">San Francisco</div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  "GoTaskMind has been incredibly helpful for organizing my development projects. The AI task suggestions give me a great starting point, and I can customize everything to fit my specific needs."
-                </p>
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Sparkles key={i} className="w-4 h-4 text-accent fill-accent" />
-                ))}
+              <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center mb-4">
+                <span className="text-lg font-bold text-accent">💻</span>
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Software Development</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Ideal for developers managing feature releases, bug tracking, sprint planning, and technical documentation with structured task breakdown.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Feature development tracking</li>
+                <li>• Code review organization</li>
+                <li>• Deployment timeline management</li>
+              </ul>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-8 transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:translate-y-[-4px]">
-              <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <span className="text-lg font-bold text-accent">Mktg</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">✍️ Freelance Writer</div>
-                    <div className="text-sm text-muted-foreground">New York</div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  "Managing multiple writing projects has become much easier with GoTaskMind. I can break down articles into manageable tasks, set realistic deadlines, and keep track of my progress across different publications."
-                </p>
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Sparkles key={i} className="w-4 h-4 text-accent fill-accent" />
-                ))}
+              <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center mb-4">
+                <span className="text-lg font-bold text-accent">✍️</span>
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Content Creation</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Perfect for content creators managing editorial calendars, blog posts, video production schedules, and social media campaigns with deadline tracking.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Editorial calendar planning</li>
+                <li>• Multi-platform content scheduling</li>
+                <li>• Publication deadline management</li>
+              </ul>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-8 transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:translate-y-[-4px]">
-              <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <span className="text-lg font-bold text-accent">Prod</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">🎓 Graduate Student</div>
-                    <div className="text-sm text-muted-foreground">London</div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  "As a graduate student, GoTaskMind helps me organize my research projects and thesis work. I can break down complex assignments into smaller tasks and track my progress throughout the semester."
-                </p>
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Sparkles key={i} className="w-4 h-4 text-accent fill-accent" />
-                ))}
+              <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center mb-4">
+                <span className="text-lg font-bold text-accent">🎓</span>
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Academic Research</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Designed for students and researchers organizing thesis work, literature reviews, experiment timelines, and collaborative academic projects.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Research milestone tracking</li>
+                <li>• Literature review organization</li>
+                <li>• Academic deadline management</li>
+              </ul>
             </div>
           </div>
         </div>

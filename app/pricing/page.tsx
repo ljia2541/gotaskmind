@@ -93,17 +93,47 @@ export default function PricingPage() {
       return
     }
 
-    // 检查用户信息 - 但更宽松一些，只要有基本信息就继续
+    // 检查用户信息 - 使用更智能的等待机制
     if (!user?.id || !user?.email) {
       console.error('用户信息缺失:', {
         hasUser: !!user,
         id: user?.id,
-        email: user?.email
+        email: user?.email,
+        isAuthenticated
       });
 
-      // 尝试刷新认证状态而不是直接要求登录
-      alert('用户信息加载中，请稍后再试...')
-      return
+      // 如果用户已认证但信息未完全加载，使用轮询等待
+      if (isAuthenticated) {
+        // 给用户信息加载一些时间，最多等待3秒
+        let retryCount = 0;
+        const maxRetries = 6; // 6次 * 500ms = 3秒
+
+        const checkUserInfo = async () => {
+          retryCount++;
+
+          // 检查当前用户信息是否已加载完成
+          if (user?.id && user?.email) {
+            console.log('✅ 用户信息已加载完成，继续支付流程');
+            await processPayment(planId, user.id, user.email);
+            return;
+          }
+
+          if (retryCount < maxRetries) {
+            console.log(`⏳ 等待用户信息加载... (${retryCount}/${maxRetries})`);
+            setTimeout(checkUserInfo, 500);
+          } else {
+            console.error('❌ 用户信息加载超时');
+            alert('用户信息加载超时，请刷新页面重试');
+          }
+        };
+
+        checkUserInfo();
+        return;
+      } else {
+        // 用户未认证，显示友好提示
+        alert('请先完成Google登录后再订阅会员');
+        return;
+      }
     }
 
     console.log('✅ 用户认证通过，开始支付流程...');
@@ -229,11 +259,7 @@ export default function PricingPage() {
     },
     {
       question: 'What is your refund policy?',
-      answer: 'All Pro plan purchases are final and non-refundable. However, we offer a 14-day evaluation period for new customers to assess our platform. During this period, customers may request a credit toward future services if they demonstrate comprehensive platform usage and provide detailed feedback. Credits are issued at our sole discretion and require meeting all evaluation criteria.'
-    },
-    {
-      question: 'How do I request a service credit?',
-      answer: 'Service credit requests require demonstration of active platform usage and detailed feedback. Please contact our support team at ljia2541@gmail.com with your evaluation report and usage details.'
+      answer: 'All Pro plan purchases are final and non-refundable. We recommend starting with our Free plan to evaluate if our platform meets your needs before upgrading to a paid subscription.'
     }
   ]
 

@@ -42,36 +42,14 @@ export default function TermsOfService() {
           </ul>
 
           <h3>3.3 Refund Policy</h3>
-          <p>We offer a satisfaction guarantee with the following conditions:</p>
-
-          <h4>Eligibility Requirements</h4>
+          <p><strong>All Pro plan purchases are final and non-refundable.</strong></p>
+          <p>We recommend starting with our Free plan to evaluate if our platform meets your needs before upgrading to a paid subscription. The Free plan includes core features that allow you to thoroughly test our service.</p>
+          <p>By purchasing a Pro plan subscription, you acknowledge and agree that:</p>
           <ul>
-            <li><strong>30-Day Window:</strong> Refund requests must be submitted within 30 days of purchase</li>
-            <li><strong>First-Time Purchase:</strong> Refund guarantee applies only to first-time Pro plan purchases</li>
-            <li><strong>Active Usage Proof:</strong> Customer must demonstrate they have actively used the service by:</li>
-            <ul>
-              <li>Creating at least 3 projects or tasks</li>
-              <li>Using AI task generation feature at least 3 times</li>
-              <li>Providing specific feedback about service limitations</li>
-            </ul>
-            <li><strong>Support Contact:</strong> Customer must contact our support team first regarding any issues</li>
-          </ul>
-
-          <h4>Non-Refundable Situations</h4>
-          <ul>
-            <li>Annual plans discounted more than 20% are non-refundable</li>
-            <li>After 30 days from purchase date</li>
-            <li>Multiple account registrations to abuse the refund policy</li>
-            <li>Violation of our Terms of Service</li>
-            <li>Requests from resellers or bulk purchases</li>
-          </ul>
-
-          <h4>Refund Process</h4>
-          <ul>
-            <li>Submit refund request through our support portal</li>
-            <li>Provide detailed reason and usage evidence</li>
-            <li>Refunds processed within 5-7 business days after approval</li>
-            <li>Refunds issued to original payment method only</li>
+            <li>All payments are final and non-refundable</li>
+            <li>You have evaluated the service through our Free plan</li>
+            <li>You understand the features and limitations of the Pro plan</li>
+            <li>No refunds will be issued for any portion of the subscription period</li>
           </ul>
 
           <h2>4. User Conduct</h2>
