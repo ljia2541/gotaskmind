@@ -22,14 +22,19 @@ export async function GET(request: NextRequest) {
     if (pendingSubscription) {
       console.log(`发现待处理订阅: ${userEmail} (ID: ${userId})`, pendingSubscription)
 
-      // 标记订阅为已处理 - 支持用户ID精确标记
-      markSubscriptionProcessed(userEmail, userId || undefined)
+      // 重要：不要立即标记为已处理，让前端有机会接收数据
+      // 延迟标记为已处理，给前端时间处理
+      setTimeout(() => {
+        markSubscriptionProcessed(userEmail, userId || undefined)
+        console.log(`延迟标记订阅为已处理: ${userEmail}`)
+      }, 5000) // 5秒后标记为已处理
 
       return NextResponse.json({
         success: true,
         hasPendingSubscription: true,
         subscription: pendingSubscription,
-        message: '发现待处理的订阅升级'
+        message: '发现待处理的订阅升级',
+        processed: false // 明确告诉前端还未处理
       })
     }
 

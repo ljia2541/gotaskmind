@@ -20,70 +20,33 @@ import { DecorativeElements } from "@/components/decorative-elements"
 import { useAuth } from "@/app/hooks/use-auth"
 
 export default function BillingSettingsPage() {
-  const { user, subscription, isPro, updateSubscription, isLoading: authLoading, forceRefreshSubscription } = useAuth()
+  const { user, subscription, isPro, updateSubscription, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [isCheckingUpgrade, setIsCheckingUpgrade] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  // 检查待处理的订阅升级 - 必须在所有条件返回之前定义
-  const checkPendingUpgrade = async () => {
-    if (!user || !user.email) return
-
-    setIsCheckingUpgrade(true)
-    try {
-      console.log('🔍 检查待处理的订阅升级...')
-      const response = await fetch(`/api/payment/auto-upgrade?userEmail=${encodeURIComponent(user.email)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin'
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('📡 自动升级API响应:', data)
-
-        if (data.success && data.hasPendingSubscription && data.subscription) {
-          console.log('🎉 发现待处理订阅，自动应用升级:', data.subscription)
-
-          // 自动应用订阅升级
-          const newSubscription = {
-            planId: data.subscription.planId,
-            status: data.subscription.status,
-            orderId: data.subscription.orderId,
-            activatedAt: data.subscription.activatedAt,
-            expiresAt: data.subscription.expiresAt
-          }
-
-          updateSubscription(newSubscription)
-          console.log(`✅ 用户已自动升级到 ${data.subscription.planId}`)
-
-          // 显示成功消息
-          alert(`恭喜！您的订阅已自动升级到 ${data.subscription.planId === 'pro-annual' ? '年度' : '月度'} Pro 计划！`)
-        } else {
-          console.log('ℹ️ 无待处理订阅升级')
-        }
-      }
-    } catch (error) {
-      console.error('❌ 检查待处理订阅失败:', error)
-    } finally {
-      setIsCheckingUpgrade(false)
+  // 简单的挂载检查
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      setMounted(false)
     }
+  }, [])
+
+  // 简单的刷新函数，不调用复杂的API
+  const handleRefresh = () => {
+    window.location.reload()
   }
 
-  // 页面加载时检查待处理的订阅升级
-  useEffect(() => {
-    if (user && user.email && !authLoading) {
-      // 延迟检查，确保认证状态已稳定
-      const timer = setTimeout(() => {
-        checkPendingUpgrade()
-      }, 500)
+  // 如果还没挂载，显示加载状态
+  if (!mounted) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
-      return () => clearTimeout(timer)
-    }
-  }, [user, authLoading])
-
-  // 显示加载状态，避免认证状态不一致导致的访问问题
+  // 显示加载状态
   if (authLoading) {
     return (
       <div className="min-h-screen gradient-bg">
@@ -98,7 +61,7 @@ export default function BillingSettingsPage() {
     )
   }
 
-  // 显示未登录状态，提供清晰的登录指引
+  // 显示未登录状态
   if (!user) {
     return (
       <div className="min-h-screen gradient-bg">
@@ -108,13 +71,18 @@ export default function BillingSettingsPage() {
             <p className="text-muted-foreground mb-6">
               请登录您的账户以访问账单和订阅管理
             </p>
-            <div className="space-x-4">
-              <Button asChild>
-                <Link href="/api/auth/google">使用 Google 登录</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/">返回首页</Link>
-              </Button>
+            <div className="space-y-4">
+              <div className="text-sm text-orange-600 bg-orange-50 p-4 rounded-lg max-w-md mx-auto">
+                <strong>提示：</strong> 如果您刚刚完成支付，请等待几秒钟让系统同步您的订阅状态，然后重新登录。
+              </div>
+              <div className="space-x-4">
+                <Button asChild>
+                  <Link href="/api/auth/google">使用 Google 登录</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/">返回首页</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -157,52 +125,6 @@ export default function BillingSettingsPage() {
     }
   }
 
-  const handleCancelSubscription = async () => {
-    if (!subscription) return
-
-    setIsLoading(true)
-    try {
-      // 这里应该调用API取消订阅
-      // 目前只是模拟取消操作
-      const canceledSubscription = {
-        ...subscription,
-        status: 'canceled' as const
-      }
-      updateSubscription(canceledSubscription)
-
-      // 显示成功消息
-      alert('订阅已取消，您将在当前计费周期结束后失去Pro功能')
-    } catch (error) {
-      console.error('取消订阅失败:', error)
-      alert('取消订阅失败，请稍后重试')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleReactivateSubscription = async () => {
-    if (!subscription) return
-
-    setIsLoading(true)
-    try {
-      // 这里应该调用API重新激活订阅
-      // 目前只是模拟重新激活操作
-      const reactivatedSubscription = {
-        ...subscription,
-        status: 'active' as const
-      }
-      updateSubscription(reactivatedSubscription)
-
-      // 显示成功消息
-      alert('订阅已重新激活！')
-    } catch (error) {
-      console.error('重新激活订阅失败:', error)
-      alert('重新激活订阅失败，请稍后重试')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen gradient-bg">
       {/* Header */}
@@ -212,11 +134,17 @@ export default function BillingSettingsPage() {
             <Logo className="w-8 h-8" />
             <span className="font-semibold text-lg text-foreground">GoTaskMind</span>
           </div>
-          <Button variant="outline" asChild>
-            <Link href="/tasks">
-              返回应用
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              刷新页面
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/tasks">
+                返回应用
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -229,10 +157,10 @@ export default function BillingSettingsPage() {
             {/* Page Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Subscription & Billing Management
+                订阅管理
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Comprehensive control over your GoTaskMind subscription, payment methods, and premium features
+                管理您的 GoTaskMind 订阅和付费功能
               </p>
             </div>
 
@@ -244,7 +172,7 @@ export default function BillingSettingsPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <CreditCard className="w-5 h-5" />
-                      Current Subscription
+                      当前订阅状态
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -291,103 +219,20 @@ export default function BillingSettingsPage() {
 
                         <Separator />
 
-                        {/* 订阅操作 */}
                         <div className="space-y-3">
                           <div className="flex flex-col sm:flex-row gap-3">
-                            {subscription.status === 'active' ? (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  onClick={handleCancelSubscription}
-                                  disabled={isLoading || subscription.planId === 'free'}
-                                  className="flex-1"
-                                >
-                                  {isLoading ? (
-                                    <>
-                                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                      处理中...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Settings className="w-4 h-4 mr-2" />
-                                      取消订阅
-                                    </>
-                                  )}
-                                </Button>
-                                <Button variant="outline" asChild className="flex-1">
-                                  <Link href="/pricing">
-                                    <ExternalLink className="w-4 h-4 mr-2" />
-                                    更改计划
-                                  </Link>
-                                </Button>
-                              </>
-                            ) : subscription.status === 'canceled' ? (
-                              <Button
-                                onClick={handleReactivateSubscription}
-                                disabled={isLoading}
-                                className="flex-1"
-                              >
-                                {isLoading ? (
-                                  <>
-                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                    处理中...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                                    重新激活
-                                  </>
-                                )}
-                              </Button>
-                            ) : (
-                              <Button asChild className="flex-1">
-                                <Link href="/pricing">
-                                  <CreditCard className="w-4 h-4 mr-2" />
-                                  升级订阅
-                                </Link>
-                              </Button>
-                            )}
+                            <Button variant="outline" onClick={handleRefresh} className="flex-1">
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              刷新状态
+                            </Button>
+                            <Button variant="outline" asChild className="flex-1">
+                              <Link href="/pricing">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                更改计划
+                              </Link>
+                            </Button>
                           </div>
-
-                          {/* 刷新订阅状态按钮 */}
-                          <Button
-                            variant="ghost"
-                            onClick={checkPendingUpgrade}
-                            disabled={isCheckingUpgrade}
-                            className="w-full"
-                            size="sm"
-                          >
-                            {isCheckingUpgrade ? (
-                              <>
-                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                检查订阅更新中...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                刷新订阅状态
-                              </>
-                            )}
-                          </Button>
                         </div>
-
-                        {subscription.status === 'canceled' && (
-                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                              <div>
-                                <div className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                                  订阅已取消
-                                </div>
-                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                  您仍可在 {subscription.expiresAt ?
-                                    new Date(subscription.expiresAt).toLocaleDateString() : '计费周期结束前'}
-                                  使用Pro功能，之后将自动降级为Free计划。
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </>
                     ) : (
                       <div className="text-center py-8">
@@ -403,20 +248,10 @@ export default function BillingSettingsPage() {
                           </Button>
                           <Button
                             variant="outline"
-                            onClick={checkPendingUpgrade}
-                            disabled={isCheckingUpgrade}
+                            onClick={handleRefresh}
                           >
-                            {isCheckingUpgrade ? (
-                              <>
-                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                检查中...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                检查订阅状态
-                              </>
-                            )}
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            刷新状态
                           </Button>
                         </div>
                       </div>
@@ -424,19 +259,30 @@ export default function BillingSettingsPage() {
                   </CardContent>
                 </Card>
 
-                {/* Billing History */}
+                {/* 简化的帮助信息 */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      Transaction History
+                      <AlertCircle className="w-5 h-5" />
+                      帮助与支持
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No transaction history available</p>
-                      <p className="text-sm mt-2">Your payment transactions will appear here</p>
+                    <div className="space-y-3 text-sm">
+                      <p>
+                        如果您刚刚完成支付，请等待几分钟让系统同步您的订阅状态，然后点击"刷新状态"按钮。
+                      </p>
+                      <p>
+                        如果长时间未显示正确的订阅状态，请联系我们的客服团队。
+                      </p>
+                      <div className="pt-3">
+                        <Button variant="outline" asChild>
+                          <a href="mailto:ljia2541@gmail.com">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            联系客服
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -447,19 +293,19 @@ export default function BillingSettingsPage() {
                 {/* Account Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Account Information</CardTitle>
+                    <CardTitle>账户信息</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">Email Address</div>
+                      <div className="text-sm text-muted-foreground">邮箱地址</div>
                       <div className="font-medium">{user.email}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Full Name</div>
+                      <div className="text-sm text-muted-foreground">姓名</div>
                       <div className="font-medium">{user.name}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Account ID</div>
+                      <div className="text-sm text-muted-foreground">账户ID</div>
                       <div className="font-mono text-xs">{user.id}</div>
                     </div>
                   </CardContent>
@@ -468,147 +314,24 @@ export default function BillingSettingsPage() {
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>快速操作</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link href="/pricing">
                         <CreditCard className="w-4 h-4 mr-2" />
-                        View Pricing Plans
+                        查看定价方案
                       </Link>
                     </Button>
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <a href="mailto:ljia2541@gmail.com">
+                      <Link href="/tasks">
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        Contact Support Team
-                      </a>
+                        返回应用
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
-
-                
-                {/* Premium Features Showcase */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Premium Features
-                      {isPro && (
-                        <Badge className="ml-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                          Active
-                        </Badge>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Advanced AI Integration
-                          </div>
-                          <div className="text-xs text-muted-foreground">Sophisticated neural network-powered task analysis</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Intelligent Smart Scheduling
-                          </div>
-                          <div className="text-xs text-muted-foreground">Machine learning-optimized time allocation</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Multi-Dimensional Project Views
-                          </div>
-                          <div className="text-xs text-muted-foreground">Kanban boards, timeline calendars & analytics dashboards</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Enterprise-Grade Security
-                          </div>
-                          <div className="text-xs text-muted-foreground">End-to-end encryption with SOC 2 compliance</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Advanced Analytics & Insights
-                          </div>
-                          <div className="text-xs text-muted-foreground">AI-powered productivity tracking and optimization recommendations</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        {isPro ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0 border-2 border-gray-300 rounded-full" />
-                        )}
-                        <div>
-                          <div className={`font-medium ${isPro ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            Priority Support & Consulting
-                          </div>
-                          <div className="text-xs text-muted-foreground">Dedicated account manager with 24/7 assistance</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {!isPro && (
-                      <div className="mt-6 pt-4 border-t">
-                        <Button asChild className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                          <Link href="/pricing">
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            Upgrade to Premium
-                          </Link>
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </div>
-            </div>
-
-            {/* Footer Links */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 text-sm text-muted-foreground">
-              <Link href="/terms" className="hover:text-foreground transition-colors">
-                Terms of Service
-              </Link>
-              <span>•</span>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">
-                Privacy Policy
-              </Link>
-              <span>•</span>
-              <a href="mailto:ljia2541@gmail.com" className="hover:text-foreground transition-colors">
-                Premium Support
-              </a>
             </div>
           </div>
         </div>

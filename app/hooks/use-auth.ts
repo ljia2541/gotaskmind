@@ -272,103 +272,65 @@ export function useAuth() {
     }
   }, []);
 
-  // 更新订阅状态 - 终极浏览器兼容性
+  // 更新订阅状态 - 简化版本，避免竞争条件
   const updateSubscription = useCallback((newSubscription: Subscription) => {
     if (user) {
       const cacheKey = `subscription_${user.id}`;
 
-      console.log('💾 更新订阅状态:', newSubscription);
-      console.log('🌐 浏览器信息:', navigator.userAgent);
+      console.log('💾 更新订阅状态 (简化版):', newSubscription);
 
-      // 立即更新状态
+      // 1. 立即更新React状态
       setSubscription(newSubscription);
-      setUseMemoryStore(true); // 启用内存存储模式
 
-      // 1. 尝试正常存储
-      const results = saveToMultipleStorages(cacheKey, JSON.stringify(newSubscription));
-      const successCount = results.filter(r => r.success).length;
-      console.log(`💾 存储结果: ${successCount}/${results.length} 成功`);
+      // 2. 立即保存到localStorage（主要存储）
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(newSubscription));
+        console.log('✅ localStorage 保存成功');
+      } catch (error) {
+        console.error('❌ localStorage 保存失败:', error);
+      }
 
-      // 2. 无论存储是否成功，都保存到内存
-      saveToMemoryStore(cacheKey, newSubscription);
-
-      // 3. 如果是Pro订阅，确保状态正确传播并清除配额限制
+      // 3. 如果是Pro订阅，立即触发状态同步事件
       if (newSubscription.planId === 'pro-monthly' || newSubscription.planId === 'pro-annual') {
         console.log('🎉 Pro订阅已激活！');
 
-        // 清除免费配额历史记录（升级到Pro时）
+        // 清除免费配额历史记录
         try {
           import('../lib/quota-service').then(({ quotaService }) => {
             quotaService.clearQuotaHistory();
-            console.log('🧹 已清除免费配额历史记录，Pro用户无配额限制');
+            console.log('🧹 已清除免费配额历史记录');
           });
         } catch (error) {
           console.error('❌ 清除配额历史记录失败:', error);
         }
 
-        // 多种方式确保状态同步，增加重试机制
-        [100, 500, 1000, 2000, 5000].forEach(delay => {
-          setTimeout(() => {
-            console.log(`🔄 延迟 ${delay}ms 触发状态同步`);
-
-            // 触发存储事件，确保跨标签页同步
-            window.dispatchEvent(new StorageEvent('storage', {
-              key: cacheKey,
-              newValue: JSON.stringify(newSubscription)
-            }));
-
-            // 触发自定义事件，通知其他组件订阅状态已更新
-            window.dispatchEvent(new CustomEvent('subscriptionUpdated', {
-              detail: { subscription: newSubscription, userId: user.id }
-            }));
-
-            // 强制触发重新渲染
-            window.dispatchEvent(new Event('storage'));
-
-            // 特殊事件：内存存储更新
-            window.dispatchEvent(new CustomEvent('memoryStoreUpdated', {
-              detail: { subscription: newSubscription, userId: user.id }
-            }));
-          }, delay);
-        });
-      } else {
-        // 对于免费计划，也触发更新事件
+        // 立即触发状态同步事件
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('subscriptionUpdated', {
             detail: { subscription: newSubscription, userId: user.id }
           }));
-        }, 0);
+        }, 100);
       }
     }
-  }, [user, saveToMultipleStorages, saveToMemoryStore]);
+  }, [user]);
 
-  // 加载用户订阅状态 - 终极浏览器兼容性
+  // 加载用户订阅状态 - 简化版本
   const loadSubscriptionStatus = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      console.log(`🔄 开始加载用户 ${userId} 的订阅状态...`);
-      console.log('🌐 浏览器信息:', navigator.userAgent);
-
+      console.log(`🔄 加载用户 ${userId} 的订阅状态...`);
       const cacheKey = `subscription_${userId}`;
+
+      // 1. 只从localStorage读取（主要存储）
       let subscriptionData = null;
-      let source = 'none';
-
-      // 1. 首先检查内存存储（最新数据）
-      const memoryData = readFromMemoryStore(cacheKey);
-      if (memoryData) {
-        subscriptionData = memoryData;
-        source = 'memory';
-        console.log('🧠 从内存存储读取到数据');
-      } else {
-        // 2. 尝试从常规存储读取
-        const { data: normalData, source: normalSource } = readFromMultipleStorages(cacheKey);
-        if (normalData) {
-          subscriptionData = JSON.parse(normalData) as Subscription;
-          source = normalSource;
-          console.log(`📦 从 ${source} 读取到订阅数据`);
+      try {
+        const storedData = localStorage.getItem(cacheKey);
+        if (storedData) {
+          subscriptionData = JSON.parse(storedData) as Subscription;
+          console.log('✅ 从localStorage读取到订阅数据');
         }
+      } catch (error) {
+        console.error('❌ localStorage读取失败:', error);
       }
-
-      console.log(`📦 从 ${source} 读取到订阅数据:`, subscriptionData);
 
       if (subscriptionData) {
         // 检查订阅是否过期
@@ -381,115 +343,29 @@ export function useAuth() {
         } else {
           console.log('✅ 订阅有效，设置订阅状态');
           setSubscription(subscriptionData);
-          setUseMemoryStore(source === 'memory' || source === 'url');
 
-          // 如果是Pro订阅，立即确保状态同步
+          // 如果是Pro订阅，额外同步检查
           if (subscriptionData.planId === 'pro-monthly' || subscriptionData.planId === 'pro-annual') {
             console.log('🎉 检测到Pro订阅，确保状态同步...');
 
-            // 将数据同步到其他存储方式
-            if (source !== 'memory') {
-              saveToMemoryStore(cacheKey, subscriptionData);
+            // 清除免费配额历史记录
+            try {
+              import('../lib/quota-service').then(({ quotaService }) => {
+                quotaService.clearQuotaHistory();
+                console.log('🧹 已清除免费配额历史记录');
+              });
+            } catch (error) {
+              console.error('❌ 清除配额历史记录失败:', error);
             }
-
-            // 额外的同步操作
-            [200, 1000, 3000].forEach(delay => {
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('subscriptionUpdated', {
-                  detail: { subscription: subscriptionData, userId }
-                }));
-              }, delay);
-            });
           }
         }
       } else {
         console.log('📝 无本地订阅数据，设置默认免费计划');
-        // 默认为免费计划
         setSubscription({
           planId: 'free',
           status: 'active'
         });
       }
-
-      // 检查是否有待处理的订阅升级（自动支付升级）
-      if (userEmail) {
-        try {
-          console.log(`🔍 检查用户 ${userEmail} 的待处理订阅升级...`)
-          const response = await fetch(`/api/payment/auto-upgrade?userEmail=${encodeURIComponent(userEmail)}&userId=${encodeURIComponent(userId)}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin'
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            console.log('📡 自动升级API响应:', data);
-
-            if (data.success && data.hasPendingSubscription && data.subscription) {
-              console.log('🎉 发现待处理订阅，自动应用升级:', data.subscription)
-
-              // 如果是Pro订阅，先清除配额历史记录
-              if (data.subscription.planId === 'pro-monthly' || data.subscription.planId === 'pro-annual') {
-                try {
-                  import('../lib/quota-service').then(({ quotaService }) => {
-                    quotaService.clearQuotaHistory();
-                    console.log('🧹 已清除免费配额历史记录（自动升级）');
-                  });
-                } catch (error) {
-                  console.error('❌ 清除配额历史记录失败:', error);
-                }
-              }
-
-              // 自动应用订阅升级
-              const newSubscription: Subscription = {
-                planId: data.subscription.planId,
-                status: data.subscription.status,
-                orderId: data.subscription.orderId,
-                activatedAt: data.subscription.activatedAt,
-                expiresAt: data.subscription.expiresAt
-              }
-
-              updateSubscription(newSubscription)
-              console.log(`✅ 用户已自动升级到 ${data.subscription.planId}`)
-
-              // 触发存储事件，确保跨标签页同步
-              window.dispatchEvent(new StorageEvent('storage', {
-                key: `subscription_${userId}`,
-                newValue: JSON.stringify(newSubscription)
-              }));
-
-              // 发送升级成功通知
-              if ('serviceWorker' in navigator && 'PushManager' in window) {
-                // 这里可以发送浏览器通知
-                console.log('订阅升级成功通知已发送')
-              }
-            } else {
-              console.log('ℹ️ 无待处理订阅升级');
-            }
-          } else {
-            console.log(`❌ 自动升级检查API返回状态: ${response.status}`)
-          }
-        } catch (autoUpgradeError) {
-          console.log('⚠️ 自动升级检查失败，但不影响正常使用:', autoUpgradeError)
-        }
-      }
-
-      // 延迟再次调试，确保状态已更新
-      setTimeout(() => {
-        if (user) {
-          const subscriptionData = localStorage.getItem(`subscription_${user.id}`);
-          console.log('=== 延迟调试 - 订阅状态信息 ===');
-          console.log('用户ID:', user.id);
-          console.log('用户邮箱:', user.email);
-          console.log('localStorage中的订阅数据:', subscriptionData);
-          console.log('当前subscription状态:', subscription);
-          console.log('isPro状态:', subscription?.planId === 'pro-monthly' || subscription?.planId === 'pro-annual');
-          console.log('订阅过期检查:', subscription?.expiresAt ? new Date(subscription.expiresAt) < new Date() : '无过期时间');
-          console.log('========================');
-        }
-      }, 500);
 
     } catch (error) {
       console.error('❌ 加载订阅状态失败:', error);
@@ -498,7 +374,7 @@ export function useAuth() {
         status: 'active'
       });
     }
-  }, [updateSubscription, readFromMultipleStorages]);
+  }, []);
 
   // 调试函数 - 检查当前订阅状态
   const debugSubscriptionStatus = useCallback(() => {
@@ -815,31 +691,39 @@ export function useAuth() {
         // 检查是否在30分钟内
         const isRecent = (Date.now() - timestamp) < 30 * 60 * 1000
 
+        console.log(`🛒 检查待处理购买意图:`, { planId, returnTo, isRecent, timestamp })
+
         if (isRecent && planId) {
-          console.log(`发现待处理的购买意图: ${planId}`)
+          console.log(`✅ 发现有效的购买意图: ${planId}`)
 
           // 清除待处理购买意图
           localStorage.removeItem('pending_purchase')
 
-          // 延迟触发支付流程，确保页面加载完成
+          // 延迟触发支付流程或重定向
           setTimeout(() => {
             if (user && user.email) {
-              console.log(`自动触发支付流程: ${planId}`)
+              console.log(`🔄 用户已登录，自动触发支付流程: ${planId}`)
 
               // 创建一个自定义事件来触发支付
               const event = new CustomEvent('triggerPurchase', {
                 detail: { planId, user: { id: user.id, email: user.email } }
               })
               window.dispatchEvent(event)
+            } else if (returnTo && returnTo !== '/') {
+              console.log(`🔄 用户未登录，重定向到: ${returnTo}`)
+              // 重定向到指定页面
+              window.location.href = returnTo
             }
-          }, 1000)
+          }, 1500) // 增加延迟确保认证状态完全加载
         } else {
-          // 过期的购买意图，清除
+          console.log(`⏰ 购买意图已过期，清除...`)
           localStorage.removeItem('pending_purchase')
         }
+      } else {
+        console.log('ℹ️ 无待处理的购买意图')
       }
     } catch (error) {
-      console.error('检查待处理购买意图失败:', error)
+      console.error('❌ 检查待处理购买意图失败:', error)
       localStorage.removeItem('pending_purchase')
     }
   }, [user])
@@ -912,49 +796,22 @@ export function useAuth() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [checkAuth]);
 
-  // 监听来自其他页面的强制刷新订阅状态事件
+  // 监听订阅状态更新事件 - 简化版本
   useEffect(() => {
-    const handleForceRefresh = (event: CustomEvent) => {
-      console.log('📡 收到强制刷新订阅状态事件，来源:', event.type);
-      if (user && isAuthenticated) {
-        forceRefreshSubscription();
+    const handleSubscriptionUpdated = (event: CustomEvent) => {
+      console.log('📡 收到订阅状态更新事件:', event.detail);
+      if (event.detail && event.detail.subscription) {
+        // 直接设置订阅状态
+        setSubscription(event.detail.subscription);
       }
     };
 
-    const handleDebugSubscription = (event: CustomEvent) => {
-      console.log('📡 收到调试订阅状态事件，来源:', event.type);
-      debugSubscriptionStatus();
-    };
-
-    const handleManualActivate = async (event: CustomEvent) => {
-      console.log('📡 收到手動激活Pro订阅事件，来源:', event.type);
-      if (user && isAuthenticated) {
-        const success = await manualActivatePro('pro-monthly');
-        if (success) {
-          console.log('✅ 手动激活Pro订阅成功');
-          // 延迟刷新页面确保状态更新
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        }
-      }
-    };
-
-    // 监听多种事件，确保能接收到各种请求
-    window.addEventListener('forceRefreshSubscription', handleForceRefresh as EventListener);
-    window.addEventListener('subscriptionUpdated', handleForceRefresh as EventListener);
-    window.addEventListener('memoryStoreUpdated', handleForceRefresh as EventListener);
-    window.addEventListener('debugSubscriptionStatus', handleDebugSubscription as EventListener);
-    window.addEventListener('manualActivatePro', handleManualActivate as EventListener);
+    window.addEventListener('subscriptionUpdated', handleSubscriptionUpdated as EventListener);
 
     return () => {
-      window.removeEventListener('forceRefreshSubscription', handleForceRefresh as EventListener);
-      window.removeEventListener('subscriptionUpdated', handleForceRefresh as EventListener);
-      window.removeEventListener('memoryStoreUpdated', handleForceRefresh as EventListener);
-      window.removeEventListener('debugSubscriptionStatus', handleDebugSubscription as EventListener);
-      window.removeEventListener('manualActivatePro', handleManualActivate as EventListener);
+      window.removeEventListener('subscriptionUpdated', handleSubscriptionUpdated as EventListener);
     };
-  }, [user, isAuthenticated, forceRefreshSubscription, debugSubscriptionStatus, manualActivatePro]);
+  }, []);
 
   return {
     user,

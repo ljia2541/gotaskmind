@@ -103,14 +103,20 @@ export class QuotaService {
 
   /**
    * 检查项目配额并在超限时抛出错误 - 实现严格配额控制
+   * 默认项目不计入配额
    */
   public checkProjectQuota(projects: Project[], isPro: boolean): void {
-    const quotaInfo = this.canCreateProject(projects.length, isPro);
+    // 过滤掉默认项目，它们不计入用户配额
+    const userCreatedProjects = projects.filter(project =>
+      !project.id.startsWith('project-1') && !project.id.startsWith('project-2')
+    );
+
+    const quotaInfo = this.canCreateProject(userCreatedProjects.length, isPro);
 
     if (!quotaInfo.canCreate) {
       let errorMessage = `项目配额已满！\n` +
         `当前配额方案: ${quotaInfo.quotaDescription}\n` +
-        `已使用: ${quotaInfo.quotaUsed} 个项目\n` +
+        `已创建: ${quotaInfo.quotaUsed} 个项目\n` +
         `配额上限: ${quotaInfo.quotaLimit} 个项目`;
 
       // 如果是严格配额控制，添加特殊说明
@@ -133,6 +139,7 @@ export class QuotaService {
 
   /**
    * 获取配额使用情况的详细信息 - 实现严格配额控制
+   * 默认项目不计入配额
    */
   public getQuotaInfo(projects: Project[], isPro: boolean): {
     totalQuota: number;
@@ -147,8 +154,13 @@ export class QuotaService {
     strictQuotaEnforced: boolean;
     quotaHistory: ReturnType<QuotaService['getQuotaHistory']>;
   } {
+    // 过滤掉默认项目，它们不计入用户配额
+    const userCreatedProjects = projects.filter(project =>
+      !project.id.startsWith('project-1') && !project.id.startsWith('project-2')
+    );
+
     const quotaLimit = this.getProjectQuota(isPro);
-    const currentCount = projects.length;
+    const currentCount = userCreatedProjects.length;
     const hasReachedQuotaBefore = this.hasReachedQuotaBefore();
 
     // 严格配额控制：如果免费用户之前达到过配额上限，则配额永久锁定
@@ -383,23 +395,6 @@ export class QuotaService {
     Object.values(this.STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
-  }
-
-  /**
-   * 获取严格配额状态描述
-   */
-  public getStrictQuotaStatus(isPro: boolean): string {
-    if (isPro) {
-      return 'Pro版本无配额限制';
-    }
-
-    const quotaHistory = this.getQuotaHistory();
-    if (quotaHistory.hasReachedQuota) {
-      const days = quotaHistory.daysSinceQuotaReached || 0;
-      return `严格配额模式已生效 ${days} 天`;
-    }
-
-    return '标准配额模式';
   }
 
   /**

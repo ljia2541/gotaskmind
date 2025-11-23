@@ -10,7 +10,7 @@ import { useAuth } from "@/app/hooks/use-auth"
 import { useState, useEffect } from "react"
 
 export default function PricingPage() {
-  const { loginWithGoogle, isAuthenticated, user, isPro, subscription } = useAuth()
+  const { loginWithGoogle, isAuthenticated, user, isPro, subscription, debugSubscriptionStatus } = useAuth()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
 
   // 处理支付逻辑的函数，提取出来以便重用
@@ -73,7 +73,15 @@ export default function PricingPage() {
   }, [])
 
   const handleUpgrade = async (planId: string) => {
+    console.log('🔍 handleUpgrade 调用:', {
+      isAuthenticated,
+      userId: user?.id,
+      userEmail: user?.email,
+      planId
+    });
+
     if (!isAuthenticated) {
+      console.log('用户未认证，开始登录流程...');
       // 保存购买意图到localStorage
       localStorage.setItem('pending_purchase', JSON.stringify({
         planId,
@@ -85,13 +93,20 @@ export default function PricingPage() {
       return
     }
 
-    // 检查用户信息
+    // 检查用户信息 - 但更宽松一些，只要有基本信息就继续
     if (!user?.id || !user?.email) {
-      console.error('用户信息不完整:', { id: user?.id, email: user?.email })
-      alert('用户信息不完整，请重新登录')
+      console.error('用户信息缺失:', {
+        hasUser: !!user,
+        id: user?.id,
+        email: user?.email
+      });
+
+      // 尝试刷新认证状态而不是直接要求登录
+      alert('用户信息加载中，请稍后再试...')
       return
     }
 
+    console.log('✅ 用户认证通过，开始支付流程...');
     // 使用提取的支付处理函数
     await processPayment(planId, user.id, user.email)
   }
@@ -123,15 +138,14 @@ export default function PricingPage() {
       name: 'Pro',
       price: '$8',
       period: 'month',
-      description: '500 projects with unlimited tasks and advanced AI features for professionals',
+      description: '500 projects and unlimited tasks with enhanced features for professionals',
       features: [
         '500 projects',
         'Unlimited tasks',
-        'Advanced AI deep insights',
-        'Multiple views (Kanban, Timeline, Calendar)',
-        'Priority support',
-        'Custom integrations',
-        'Advanced analytics',
+        'Enhanced AI task generation',
+        'Multiple project views (Kanban, Calendar)',
+        'Email support within 24 hours',
+        'Analytics dashboard',
       ],
       annualDiscount: null,
       button: {
@@ -149,14 +163,12 @@ export default function PricingPage() {
       name: 'Pro',
       price: '$88',
       period: 'year',
-      description: 'Save 8% with annual billing - all Pro features included for teams',
+      description: 'Save 8% with annual billing - all Pro features included',
       features: [
         'Everything in Pro monthly',
-        'Annual billing discount',
-        'Dedicated account manager',
-        'Priority feature requests',
-        'Custom onboarding',
-        'Advanced security features',
+        'Annual billing ($8 savings)',
+        'Priority email support',
+        'Early access to new features',
       ],
       annualDiscount: 'Save $8/year',
       button: {
@@ -221,7 +233,7 @@ export default function PricingPage() {
     },
     {
       question: 'How do I request a service credit?',
-      answer: 'Service credit requests require submission of a comprehensive evaluation report including: complete project documentation (minimum 15 projects with detailed task breakdowns), AI feature utilization analysis (minimum 20 AI generations with effectiveness metrics), integration implementation proof, and a 500-word detailed analysis of platform limitations. Email your complete evaluation report to 915715442@qq.com. Final determination within 10 business days.'
+      answer: 'Service credit requests require demonstration of active platform usage and detailed feedback. Please contact our support team at ljia2541@gmail.com with your evaluation report and usage details.'
     }
   ]
 
@@ -275,6 +287,7 @@ export default function PricingPage() {
               </div>
             )}
 
+  
             <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Check className="w-4 h-4 text-green-500" />
@@ -419,8 +432,10 @@ export default function PricingPage() {
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8">
                 Start Free Trial
               </Button>
-              <Button size="lg" variant="outline" className="text-base px-8">
-                Contact Sales
+              <Button size="lg" variant="outline" className="text-base px-8" asChild>
+                <a href="/contact">
+                  Contact Sales
+                </a>
               </Button>
             </div>
           </div>
@@ -450,9 +465,15 @@ export default function PricingPage() {
                 >
                   Privacy Policy
                 </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Contact
+                </Link>
               </div>
               <p>
-                © 2025 GoTaskMind. Empowering teams with AI for the future of work.
+                © 2025 GoTaskMind. 智启未来，赋能工作
               </p>
             </div>
           </div>

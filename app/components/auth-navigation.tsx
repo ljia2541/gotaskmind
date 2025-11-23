@@ -20,11 +20,22 @@ import { LanguageService, analyticsTranslations } from '@/app/lib/language-servi
  * 根据用户登录状态显示不同的导航选项
  */
 export function AuthNavigation() {
-  const { user, isAuthenticated, loginWithGoogle, loginWithGitHub, logout, isPro } = useAuth();
+  const { user, isAuthenticated, loginWithGoogle, loginWithGitHub, logout, isPro, subscription } = useAuth();
   const { canAccessAnalytics } = useFeatureAccess();
   const isMobile = useIsMobile();
   // 使用Next.js提供的usePathname钩子获取当前路径，避免使用window对象
   const pathname = usePathname();
+
+  // 添加调试日志
+  useEffect(() => {
+    console.log('📍 AuthNavigation 状态更新:', {
+      hasUser: !!user,
+      userEmail: user?.email,
+      isPro,
+      planId: subscription?.planId,
+      pathname
+    });
+  }, [user, isPro, subscription, pathname]);
 
   // 服务端渲染时始终使用默认语言(中文)，避免Hydration不匹配
   // 在客户端组件中，可以在useEffect中更新语言
@@ -104,12 +115,28 @@ export function AuthNavigation() {
         </button>
         {isAuthenticated && isPro && (
           <Link
-            href="/settings/billing"
-            className={`text-sm transition-colors ${currentPath === '/settings/billing' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+            href="/settings/subscription"
+            className={`text-sm transition-colors ${currentPath === '/settings/subscription' ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
           >
             <CreditCard className="w-4 h-4 inline mr-1" />
-            管理订阅
+            {translations.navigation.subscription}
           </Link>
+        )}
+        {isAuthenticated && !isPro && (
+          <button
+            onClick={() => {
+              console.log('🔄 强制刷新订阅状态');
+              // 强制刷新订阅状态
+              window.dispatchEvent(new CustomEvent('forceRefreshSubscription'));
+              // 延迟刷新页面
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            }}
+            className="text-xs transition-colors text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer p-0"
+          >
+            🔄 强制刷新
+          </button>
         )}
         {isAuthenticated ? (
           <>
@@ -207,11 +234,11 @@ export function AuthNavigation() {
         <Separator />
           {isAuthenticated && isPro && (
             <Link
-              href="/settings/billing"
+              href="/settings/subscription"
               className="text-base hover:bg-accent hover:text-accent-foreground py-2 px-3 rounded-md transition-colors flex items-center gap-3"
             >
               <CreditCard className="w-4 h-4" />
-              管理订阅
+              {translations.navigation.subscription}
             </Link>
           )}
           {isAuthenticated ? (
@@ -318,9 +345,9 @@ function AuthenticatedMenu({ user, onLogout, translations }: AuthenticatedMenuPr
         <Separator />
         {isPro && (
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/settings/billing" className="flex items-center w-full">
+            <Link href="/settings/subscription" className="flex items-center w-full">
               <CreditCard className="mr-2 h-4 w-4" />
-              <span>管理订阅</span>
+              <span>{translations.navigation.subscription}</span>
             </Link>
           </DropdownMenuItem>
         )}

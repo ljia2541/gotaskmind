@@ -11,8 +11,39 @@ interface PendingSubscription {
   processed: boolean
 }
 
-// 内存存储（重启后会丢失）- 使用更精细的键值管理
-const pendingSubscriptions: Map<string, PendingSubscription> = new Map()
+// 持久化存储 - 使用 localStorage + 内存备份
+let pendingSubscriptions: Map<string, PendingSubscription> = new Map()
+
+// 从localStorage恢复订阅数据
+function loadSubscriptionsFromStorage() {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('pendingSubscriptions')
+      if (stored) {
+        const data = JSON.parse(stored)
+        pendingSubscriptions = new Map(data)
+        console.log('📦 从localStorage恢复订阅数据:', pendingSubscriptions.size, '个订阅')
+      }
+    } catch (error) {
+      console.error('❌ 从localStorage恢复订阅数据失败:', error)
+    }
+  }
+}
+
+// 保存订阅数据到localStorage
+function saveSubscriptionsToStorage() {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = Array.from(pendingSubscriptions.entries())
+      localStorage.setItem('pendingSubscriptions', JSON.stringify(data))
+    } catch (error) {
+      console.error('❌ 保存订阅数据到localStorage失败:', error)
+    }
+  }
+}
+
+// 初始化时加载数据
+loadSubscriptionsFromStorage()
 
 // 生成更精确的订阅键，避免冲突
 function generateSubscriptionKey(userEmail: string, userId?: string): string {
@@ -34,6 +65,8 @@ export function addPendingSubscription(subscription: PendingSubscription): void 
       // 更新现有订阅而不是创建新的
       pendingSubscriptions.set(existingKey, subscription);
       console.log(`更新现有订阅: ${existingKey}`, subscription);
+      saveSubscriptionsToStorage(); // 立即保存到localStorage
+      triggerServerSync(subscription); // 自动同步到服务端
       return;
     }
   }
@@ -41,6 +74,8 @@ export function addPendingSubscription(subscription: PendingSubscription): void 
   // 添加新订阅
   pendingSubscriptions.set(uniqueKey, subscription);
   console.log(`添加新待处理订阅: ${uniqueKey}`, subscription);
+  saveSubscriptionsToStorage(); // 立即保存到localStorage
+  triggerServerSync(subscription); // 自动同步到服务端
 }
 
 // 获取待处理的订阅 - 支持按用户ID精确查找
@@ -71,6 +106,7 @@ export function markSubscriptionProcessed(userEmail: string, userId?: string): v
       subscription.processed = true;
       pendingSubscriptions.set(key, subscription);
       console.log(`订阅已标记为处理: ${key} for user ${emailKey} (ID: ${userId})`);
+      saveSubscriptionsToStorage(); // 立即保存到localStorage
       return; // 找到并处理后立即返回
     }
   }
@@ -119,4 +155,30 @@ export function cleanupExpiredSubscriptions(): void {
 // 检查订阅是否过期
 export function isSubscriptionExpired(expiresAt: string): boolean {
   return new Date(expiresAt) < new Date()
+}
+
+// 触发服务端同步（异步执行，不阻塞主流程）
+function triggerServerSync(subscription: PendingSubscription): void {
+  if (typeof window === 'undefined') return; // 只在客户端执行
+
+  try {
+    // 异步执行，不阻塞用户界面
+    fetch('/api/payment/sync-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userEmail: subscription.userEmail,
+        userId: subscription.userId,
+        clientData: {
+          pendingSubscriptions: Array.from(pendingSubscriptions.entries())
+        }
+      }),
+    }).catch(error => {
+      console.log('⚠️ 服务端同步失败（可忽略）:', error.message)
+    })
+  } catch (error) {
+    console.log('⚠️ 触发服务端同步失败（可忽略）:', error)
+  }
 }

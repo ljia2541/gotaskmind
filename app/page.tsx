@@ -380,7 +380,7 @@ export default function LandingPage() {
               Transform Ideas into Actionable Plans
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 md:mb-12 text-pretty max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-900">
-              An intelligent productivity companion for individual users that understands personal goals and work habits through natural language interaction, automatically generating personalized task plans.
+              An AI-powered project management tool that helps you organize tasks and create structured plans from natural language descriptions.
             </p>
 
             {/* AI Input Demo */}
@@ -453,28 +453,28 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="order-2 md:order-1">
-                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">AI Understands Your Vision</h3>
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">AI-Powered Task Generation</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  Our intelligent AI models deeply analyze your project vision to generate personalized plans that truly understand your individual work style, making the planning process natural and efficient.
+                  Our AI assistant helps break down your projects into manageable tasks using natural language processing. Simply describe your project, and we'll suggest a structured task list to get you started.
                 </p>
                 <ul className="space-y-3">
                     <li className="flex items-start gap-3 group">
                       <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-accent/30 transition-colors">
                         <Sparkles className="w-3 h-3 text-accent" />
                       </div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Natural language processing, intuitive input</span>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Natural language project descriptions</span>
                     </li>
                     <li className="flex items-start gap-3 group">
                       <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-accent/30 transition-colors">
                         <Sparkles className="w-3 h-3 text-accent" />
                       </div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Intelligent task dependencies and timeline estimation</span>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Task breakdown with priority suggestions</span>
                     </li>
                     <li className="flex items-start gap-3 group">
                       <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-accent/30 transition-colors">
                         <Sparkles className="w-3 h-3 text-accent" />
                       </div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Continuous personalized adaptation</span>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">Project organization and categorization</span>
                     </li>
                   </ul>
               </div>
@@ -636,43 +636,43 @@ export default function LandingPage() {
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Advanced AI Integration</span>
-                      <div className="text-xs text-muted-foreground ml-6">Sophisticated neural network-powered task analysis</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">500 Projects & Unlimited Tasks</span>
+                      <div className="text-xs text-muted-foreground ml-6">Create up to 500 projects and unlimited tasks</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Intelligent Smart Scheduling</span>
-                      <div className="text-xs text-muted-foreground ml-6">Machine learning-optimized time allocation</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Enhanced AI Task Generation</span>
+                      <div className="text-xs text-muted-foreground ml-6">More detailed and comprehensive task breakdowns</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Multi-Dimensional Project Views</span>
-                      <div className="text-xs text-muted-foreground ml-6">Kanban boards, timeline calendars & analytics dashboards</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Advanced Project Views</span>
+                      <div className="text-xs text-muted-foreground ml-6">Kanban boards, calendar views, and progress tracking</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Enterprise-Grade Security</span>
-                      <div className="text-xs text-muted-foreground ml-6">End-to-end encryption with SOC 2 compliance</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Data Export & Backup</span>
+                      <div className="text-xs text-muted-foreground ml-6">Export your projects and data for safekeeping</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Advanced Analytics & Insights</span>
-                      <div className="text-xs text-muted-foreground ml-6">AI-powered productivity tracking and optimization recommendations</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Analytics Dashboard</span>
+                      <div className="text-xs text-muted-foreground ml-6">Track your productivity and project progress</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Priority Support & Consulting</span>
-                      <div className="text-xs text-muted-foreground ml-6">Dedicated account manager with 24/7 assistance</div>
+                      <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">Email Support</span>
+                      <div className="text-xs text-muted-foreground ml-6">Get help with any questions within 24 hours</div>
                     </div>
                   </li>
                 </ul>
@@ -712,8 +712,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "GoTaskMind reduced my project planning time by 70%, allowing me to focus on core development work. 
-                  The AI-generated plans precisely match my tech stack and work habits."
+                  "GoTaskMind has been incredibly helpful for organizing my development projects. The AI task suggestions give me a great starting point, and I can customize everything to fit my specific needs."
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -733,8 +732,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "Managing multiple writing projects has become effortless. The AI understands my creative process and 
-                  intelligently arranges the optimal sequence for research, outlining, writing, and proofreading. It has truly transformed my work!"
+                  "Managing multiple writing projects has become much easier with GoTaskMind. I can break down articles into manageable tasks, set realistic deadlines, and keep track of my progress across different publications."
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -754,7 +752,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  "As an independent developer, GoTaskMind serves as my personal project management assistant. The intelligent time estimation allows me to commit delivery dates to clients more accurately, significantly improving client satisfaction."
+                  "As a graduate student, GoTaskMind helps me organize my research projects and thesis work. I can break down complex assignments into smaller tasks and track my progress throughout the semester."
                 </p>
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -929,6 +927,12 @@ export default function LandingPage() {
                   className="hover:text-foreground transition-colors"
                 >
                   Privacy Policy
+                </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Contact
                 </Link>
               </div>
               <p>

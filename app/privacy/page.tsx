@@ -102,7 +102,7 @@ export default function PrivacyPolicy() {
           <h2>12. Contact Us</h2>
           <p>If you have any questions or concerns about this Privacy Policy, please contact us:</p>
           <ul>
-            <li><strong>Email:</strong> privacy@gotaskmind.com</li>
+            <li><strong>Email:</strong> ljia2541@gmail.com</li>
             <li><strong>Business Hours:</strong> Monday to Friday, 9:00-18:00 (UTC+8)</li>
             <li><strong>Response Time:</strong> We will respond to your inquiry within 48 hours</li>
             <li><strong>Supported Languages:</strong> English, Chinese</li>

@@ -30,7 +30,7 @@ import { quotaService } from '@/app/lib/quota-service';
 
 export default function TaskManagementPage() {
   // 认证状态
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, login, logout, isPro } = useAuth();
 
   // 功能访问控制
   const {
@@ -289,6 +289,14 @@ export default function TaskManagementPage() {
     }
   }, [isInitialized]);
 
+  // 单独的useEffect处理Pro状态和配额清除
+  useEffect(() => {
+    if (isInitialized && isPro) {
+      console.log('🎉 用户是Pro会员，清除配额限制');
+      quotaService.clearQuotaHistory();
+    }
+  }, [isInitialized, isPro]);
+
   // 处理搜索和过滤任务
   const filteredTasks = tasks.filter(task => {
     // 项目筛选
@@ -374,7 +382,7 @@ export default function TaskManagementPage() {
     const targetProjectId = selectedProjectId === 'all' ? undefined : selectedProjectId;
     if (targetProjectId) {
       const projectTasks = tasks.filter(task => task.projectId === targetProjectId);
-      const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, user?.isPro || false);
+      const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, isPro);
 
       if (!taskQuotaInfo.canCreateMoreTasks) {
         alert(`项目任务配额已满！\n\n` +
@@ -436,7 +444,7 @@ export default function TaskManagementPage() {
     if (!editingTask && formData.projectId) {
       try {
         const projectTasks = tasks.filter(task => task.projectId === formData.projectId);
-        quotaService.checkTaskQuotaInProject(projectTasks, user?.isPro || false);
+        quotaService.checkTaskQuotaInProject(projectTasks, isPro);
       } catch (error: any) {
         if (error.code === 'TASK_QUOTA_EXCEEDED') {
           alert(error.message);
@@ -490,7 +498,7 @@ export default function TaskManagementPage() {
   const handleOpenAddProjectDialog = () => {
     // 检查项目配额（使用严格配额控制）
     if (!editingProject) {
-      const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+      const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
 
       if (!quotaInfo.canCreateMore) {
         // 显示配额已满的错误信息
@@ -530,7 +538,7 @@ export default function TaskManagementPage() {
     // 如果是新增项目，再次检查配额
     if (!editingProject) {
       try {
-        quotaService.checkProjectQuota(projects, user?.isPro || false);
+        quotaService.checkProjectQuota(projects, isPro);
       } catch (error: any) {
         if (error.code === 'QUOTA_EXCEEDED' || error.code === 'STRICT_QUOTA_EXCEEDED') {
           alert(error.message);
@@ -897,7 +905,7 @@ export default function TaskManagementPage() {
               variant="secondary"
               onClick={handleOpenAddProjectDialog}
               className={(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 return warningLevel === 'danger' ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300' :
                        warningLevel === 'warning' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300' : '';
@@ -906,7 +914,7 @@ export default function TaskManagementPage() {
               <PlusCircle className="w-4 h-4 mr-2" />
               添加项目
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 if (warningLevel === 'danger') {
                   return <span className="ml-2 text-xs">({quotaInfo.strictQuotaEnforced ? '严格配额' : '配额已满'})</span>;
@@ -926,9 +934,9 @@ export default function TaskManagementPage() {
             <Card className="p-4 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">项目列表</h2>
 
-              {/* 配额信息显示（使用严格配额控制） */}
+              {/* 配额信息显示（默认项目不计入配额） */}
               {(() => {
-                const quotaInfo = quotaService.getQuotaInfo(projects, user?.isPro || false);
+                const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 const statusColor = quotaService.getQuotaStatusColor(quotaInfo);
 
@@ -953,7 +961,7 @@ export default function TaskManagementPage() {
                     </div>
                     <div className="text-xs opacity-75">
                       {quotaInfo.remainingQuota > 0
-                        ? `还可创建 ${quotaInfo.remainingQuota} 个项目`
+                        ? `可创建 ${quotaInfo.remainingQuota} 个自定义项目（默认项目不计入配额）`
                         : quotaInfo.strictQuotaEnforced
                           ? `严格配额模式：删除项目也不会释放配额`
                           : '配额已满，请升级到Pro版本'
@@ -967,7 +975,7 @@ export default function TaskManagementPage() {
                         <div>删除项目不会释放新配额</div>
                       </div>
                     )}
-                    {!user?.isPro && quotaInfo.upgradeAvailable && (
+                    {!isPro && quotaInfo.upgradeAvailable && (
                       <div className="mt-2">
                         <Button
                           size="sm"
@@ -991,7 +999,7 @@ export default function TaskManagementPage() {
                 </button>
                 {projects.map((project) => {
                   const projectTasks = tasks.filter(task => task.projectId === project.id);
-                  const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, user?.isPro || false);
+                  const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, isPro);
                   const warningLevel = taskQuotaInfo.taskLimitReached ? 'danger' :
                                      taskQuotaInfo.upgradeAvailable ? 'warning' : 'normal';
 

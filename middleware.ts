@@ -63,7 +63,38 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // 如果用户未登录且访问完全保护的路由
+  // 检查是否访问订阅管理页面
+  if (pathname === '/settings/subscription') {
+    console.log('访问订阅管理页面 - 用户状态:', {
+      hasUser: !!user,
+      userEmail: user?.email,
+      referer: request.headers.get('referer')
+    });
+
+    // 如果用户已登录，允许访问
+    if (user && user.email) {
+      console.log('用户已登录，允许访问订阅管理页面');
+      return supabaseResponse;
+    }
+
+    // 如果用户未登录，检查是否从支付成功页面跳转
+    const referer = request.headers.get('referer');
+    const isFromPaymentSuccess = referer?.includes('/payment/success');
+
+    if (isFromPaymentSuccess) {
+      console.log('从支付成功页面访问，允许通过');
+      return supabaseResponse;
+    }
+
+    // 否则重定向到首页
+    const url = request.nextUrl.clone();
+    url.searchParams.set('redirectTo', pathname);
+    url.pathname = '/';
+    console.log('用户未登录，重定向到首页');
+    return NextResponse.redirect(url);
+  }
+
+  // 如果用户未登录且访问其他完全保护的路由
   if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
     const url = request.nextUrl.clone();
     url.searchParams.set('redirectTo', pathname);

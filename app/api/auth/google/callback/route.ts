@@ -32,6 +32,26 @@ export async function GET(request: Request) {
     next = '/';
   }
 
+  // 检查是否有从支付页面保存的返回URL
+  const returnToHeader = request.headers.get('X-Auth-Return-To');
+  if (returnToHeader && returnToHeader.startsWith('/')) {
+    next = returnToHeader;
+    console.log('使用支付页面保存的返回URL:', next);
+  }
+
+  // 作为备选方案，也可以查询auth_return_to cookie（如果存在）
+  const authReturnCookie = request.headers.get('cookie')?.split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('auth_return_to='));
+
+  if (authReturnCookie) {
+    const returnUrl = authReturnCookie.split('=')[1];
+    if (returnUrl && returnUrl.startsWith('/')) {
+      next = returnUrl;
+      console.log('从cookie获取返回URL:', next);
+    }
+  }
+
   if (!code) {
     console.error('Google回调: 缺少授权码');
     return NextResponse.redirect(`${origin}/?authError=missing_code`);
@@ -57,8 +77,10 @@ export async function GET(request: Request) {
         hasSession: !!data.session
       });
 
-      // 构建正确的重定向URL
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+      // 构建正确的重定向URL - 开发环境强制使用localhost:3000
+      const baseUrl = process.env.NODE_ENV === 'development'
+        ? 'http://localhost:3000'
+        : (process.env.NEXT_PUBLIC_SITE_URL || origin);
       const redirectUrl = `${baseUrl}${next}`;
 
       console.log('重定向到:', redirectUrl);
@@ -86,6 +108,15 @@ export async function GET(request: Request) {
           sameSite: 'lax'
         });
       }
+
+      // 清除auth_return_to cookie（如果存在）
+      response.cookies.set('auth_return_to', '', {
+        path: '/',
+        maxAge: 0,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax'
+      });
 
       return response;
     } else {

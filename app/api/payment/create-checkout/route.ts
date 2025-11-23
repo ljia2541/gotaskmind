@@ -68,15 +68,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 获取基础URL用于回调 - 确保开发环境使用localhost
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? (process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'https://www.gotaskmind.com')
+      : 'http://localhost:3000'
+
     console.log('Creem配置检查:', {
       hasApiKey: !!CREEM_API_KEY,
       apiKeyPrefix: CREEM_API_KEY?.substring(0, 10) + '...',
       productIds: PRODUCT_IDS,
-      planId
+      planId,
+      baseUrl,
+      nodeEnv: process.env.NODE_ENV,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      nextAuthUrl: process.env.NEXTAUTH_URL
     })
-
-    // 获取基础URL用于回调
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
 
     // 创建Creem支付会话
     // 注意：Creem API的限制：
