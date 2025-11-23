@@ -6,7 +6,7 @@ const CREEM_API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.creem.io/v1'
   : 'https://test-api.creem.io/v1'
 
-const CREEM_API_KEY = process.env.CREEM_API_KEY
+const CREEM_API_KEY = process.env.CREEM_API_KEY || 'creem_33WTOGfUg1IMQoQPFIvMTP'
 
 export async function POST(request: NextRequest) {
   try {

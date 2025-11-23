@@ -5,7 +5,7 @@ const CREEM_API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.creem.io/v1/checkouts'
   : 'https://test-api.creem.io/v1/checkouts'
 
-const CREEM_API_KEY = process.env.CREEM_API_KEY
+const CREEM_API_KEY = process.env.CREEM_API_KEY || 'creem_33WTOGfUg1IMQoQPFIvMTP'
 
 // 产品ID映射 - 生产环境硬编码回退值，确保配置问题不影响使用
 const PRODUCT_IDS = {

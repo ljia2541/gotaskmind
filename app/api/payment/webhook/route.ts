@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { addPendingSubscription } from '../../../lib/subscription-store'
 
-const CREEM_WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET
+const CREEM_WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET || 'whsec_2QRf5I0wsE62ddcRPMXwWe'
 
 // 验证Creem签名
 function verifySignature(payload: string, signature: string, secret: string): boolean {
