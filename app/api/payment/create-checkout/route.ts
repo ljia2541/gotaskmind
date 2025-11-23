@@ -7,10 +7,10 @@ const CREEM_API_BASE_URL = process.env.NODE_ENV === 'production'
 
 const CREEM_API_KEY = process.env.CREEM_API_KEY
 
-// 产品ID映射 - 这些需要在Creem控制台中创建
+// 产品ID映射 - 生产环境硬编码回退值，确保配置问题不影响使用
 const PRODUCT_IDS = {
-  'pro-monthly': process.env.CREEM_PRO_MONTHLY_PRODUCT_ID,
-  'pro-annual': process.env.CREEM_PRO_ANNUAL_PRODUCT_ID
+  'pro-monthly': process.env.CREEM_PRO_MONTHLY_PRODUCT_ID || 'prod_2fiELTk7VFJsNWOFXfJQfN',
+  'pro-annual': process.env.CREEM_PRO_ANNUAL_PRODUCT_ID || 'prod_2Fz0Z1lWPSXICGhhY6Hh23'
 }
 
 export async function POST(request: NextRequest) {
@@ -76,8 +76,13 @@ export async function POST(request: NextRequest) {
     console.log('Creem配置检查:', {
       hasApiKey: !!CREEM_API_KEY,
       apiKeyPrefix: CREEM_API_KEY?.substring(0, 10) + '...',
-      productIds: PRODUCT_IDS,
+      envProductIds: {
+        'pro-monthly': process.env.CREEM_PRO_MONTHLY_PRODUCT_ID,
+        'pro-annual': process.env.CREEM_PRO_ANNUAL_PRODUCT_ID
+      },
+      finalProductIds: PRODUCT_IDS,
       planId,
+      productId: PRODUCT_IDS[planId as keyof typeof PRODUCT_IDS],
       baseUrl,
       nodeEnv: process.env.NODE_ENV,
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
