@@ -24,7 +24,7 @@ const examplePrompts = [
 ]
 
 export default function LandingPage() {
-  const { loginWithGoogle, isAuthenticated, isPro, subscription, user, debugSubscriptionStatus, forceRefreshSubscription, manualActivatePro, useMemoryStore, updateSubscription } = useAuth()
+  const { loginWithGoogle, isAuthenticated, isPro, subscription, user, debugSubscriptionStatus, manualActivatePro, useMemoryStore, updateSubscription } = useAuth()
   // 获取用户语言偏好，确保服务器端和客户端渲染一致性
   const defaultLanguage = 'zh'; // 默认使用中文
   const [userLanguage, setUserLanguage] = useState(defaultLanguage);
@@ -101,14 +101,14 @@ export default function LandingPage() {
           // 针对中国本土浏览器，延迟执行状态同步
           setTimeout(() => {
             console.log('🔄 中国浏览器专用同步')
-            forceRefreshSubscription()
+            // 订阅状态会在useAuth hook中自动同步
           }, 1000)
         }
       }
     }, 2000) // 增加延迟时间确保页面完全加载
 
     return () => clearTimeout(timer)
-  }, [isAuthenticated, user, forceRefreshSubscription])
+  }, [isAuthenticated, user])
 
   // 调试功能 - 键盘快捷键 (Shift+Ctrl+D)
   useEffect(() => {
@@ -119,19 +119,13 @@ export default function LandingPage() {
         console.log('🔍 调试：检查订阅状态')
         debugSubscriptionStatus()
       }
-      // Shift + Ctrl + R
-      else if (event.shiftKey && event.ctrlKey && event.key === 'R') {
-        event.preventDefault()
-        console.log('🔄 调试：强制刷新订阅状态')
-        forceRefreshSubscription()
-      }
     }
 
     if (process.env.NODE_ENV === 'development') {
       window.addEventListener('keydown', handleKeyPress)
       return () => window.removeEventListener('keydown', handleKeyPress)
     }
-  }, [debugSubscriptionStatus, forceRefreshSubscription])
+  }, [debugSubscriptionStatus])
 
   /**
    * 处理AI任务生成
@@ -327,53 +321,7 @@ export default function LandingPage() {
                     )}
                   </span>
                   {/* 开发环境下的调试按钮 */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <>
-                      <button
-                        onClick={() => {
-                          debugSubscriptionStatus();
-                          console.log('🔍 已调用调试函数，查看控制台输出');
-                        }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
-                        title="调试订阅状态 (Shift+Ctrl+D)"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => forceRefreshSubscription()}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
-                        title="刷新订阅状态 (Shift+Ctrl+R)"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                      </button>
-                      {/* 如果显示Free Plan但用户已经付费，显示紧急修复按钮 */}
-                      {!isPro && (
-                        <button
-                          onClick={async () => {
-                            console.log('🚨 紧急修复：手动激活Pro订阅');
-                            const success = await manualActivatePro('pro-monthly');
-                            if (success) {
-                              alert('Pro订阅激活成功！页面将自动刷新。');
-                              setTimeout(() => window.location.reload(), 1000);
-                            } else {
-                              alert('激活失败，请查看控制台错误信息。');
-                            }
-                          }}
-                          className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110 bg-red-500 text-white rounded-full p-0.5"
-                          title="紧急修复：手动激活Pro月度订阅"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
+                  </div>
               )}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 text-balance leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700">

@@ -122,23 +122,7 @@ export function AuthNavigation() {
             {translations.navigation.subscription}
           </Link>
         )}
-        {isAuthenticated && !isPro && (
-          <button
-            onClick={() => {
-              console.log('🔄 强制刷新订阅状态');
-              // 强制刷新订阅状态
-              window.dispatchEvent(new CustomEvent('forceRefreshSubscription'));
-              // 延迟刷新页面
-              setTimeout(() => {
-                window.location.reload();
-              }, 1000);
-            }}
-            className="text-xs transition-colors text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer p-0"
-          >
-            🔄 强制刷新
-          </button>
-        )}
-        {isAuthenticated ? (
+          {isAuthenticated ? (
           <>
             {/* <NotificationButton userEmail={user?.email} isPro={isPro} /> */}
             <AuthenticatedMenu user={user!} onLogout={logout} translations={translations} />
