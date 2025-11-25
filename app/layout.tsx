@@ -26,9 +26,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>)
-{  
+{
   return (
     <html className="" lang="zh-CN" suppressHydrationWarning>
+      {/* Google Analytics */}
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-8LLRSPYZGL" />
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-8LLRSPYZGL');
+        `
+      }} />
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <Suspense fallback={null}>
           <AuthProvider>
