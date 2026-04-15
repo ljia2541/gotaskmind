@@ -10,14 +10,41 @@ import { NotificationBanner } from "@/components/ui/notification-banner"
 import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
-  title: 'GoTaskMind - AI Project Planning & Task Management',
-  description: 'Transform project ideas into actionable task plans with AI. Break down complex projects, get smart scheduling, and boost productivity. Free to start.',
+  title: 'GoTaskMind - Free AI Project Planner & Task Management Tool',
+  description: 'Free AI project planner that transforms ideas into actionable task plans. Describe your project in plain English and get structured task breakdowns with priorities, dependencies, and time estimates. No signup required.',
   generator: 'v0.app',
-  keywords: ['AI project planning', 'task management tool', 'AI task generator', 'project planning software', 'smart task breakdown', 'productivity tools'],
+  keywords: [
+    'AI project planning', 'task management tool', 'AI task generator',
+    'project planning software', 'smart task breakdown', 'productivity tools',
+    'AI project management', 'AI task planner', 'project planning AI free',
+    'break down project into tasks AI', 'AI work breakdown structure',
+    'AI sprint planning tool', 'automated task creation',
+    'AI productivity assistant', 'project management AI assistant',
+    'task management AI free', 'AI project timeline generator',
+    'work planning AI tool', 'AI kanban board',
+    'project management for developers', 'content calendar AI planner',
+    'academic project planner AI', 'AI task list generator',
+  ],
+  metadataBase: new URL('https://gotaskmind.com'),
   openGraph: {
-    title: 'GoTaskMind - AI-Powered Project Management Platform',
-    description: 'Transform your ideas into actionable plans with AI-powered project management. Perfect for teams and professionals.',
+    title: 'GoTaskMind - Free AI Project Planner & Task Management',
+    description: 'Transform ideas into actionable plans with AI. Describe your project and get structured task breakdowns instantly. Free to start, no signup required.',
     type: 'website',
+    siteName: 'GoTaskMind',
+    url: 'https://gotaskmind.com',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GoTaskMind - Free AI Project Planner',
+    description: 'AI-powered project planning. Describe your idea, get structured tasks instantly. Free.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 }
 
@@ -38,6 +65,82 @@ export default function RootLayout({
           gtag('js', new Date());
           gtag('config', 'G-8LLRSPYZGL');
         `
+      }} />
+      <link rel="canonical" href="https://gotaskmind.com" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'WebApplication',
+              '@id': 'https://gotaskmind.com/#webapp',
+              name: 'GoTaskMind',
+              description: 'Free AI project planner that transforms ideas into actionable task plans with structured breakdowns, priorities, and time estimates.',
+              url: 'https://gotaskmind.com',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'AggregateOffer',
+                priceCurrency: 'USD',
+                lowPrice: '0',
+                highPrice: '88',
+                offerCount: '2',
+              },
+            },
+            {
+              '@type': 'Organization',
+              '@id': 'https://gotaskmind.com/#organization',
+              name: 'GoTaskMind',
+              url: 'https://gotaskmind.com',
+            },
+            {
+              '@type': 'FAQPage',
+              '@id': 'https://gotaskmind.com/#faq',
+              mainEntity: [
+                {
+                  '@type': 'Question',
+                  name: 'Is GoTaskMind free to use?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes! GoTaskMind offers a free plan with 3 projects, 10 tasks per project, basic AI task generation, and Kanban view. No signup required to start.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'How does AI project planning work?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Simply describe your project in plain English. GoTaskMind\'s AI analyzes your description and generates a structured task list with priorities, dependencies, and estimated timelines.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'What types of projects can I plan with GoTaskMind?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'GoTaskMind works for software development, content creation, academic research, event planning, marketing campaigns, and any project that needs structured task breakdown.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'Do I need to create an account to use GoTaskMind?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'You can try AI task generation without an account. For saving projects, managing tasks, and accessing advanced features, a free account is needed.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'What is the best AI project planning tool?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'GoTaskMind is designed specifically for AI-powered project planning, offering natural language task breakdown, priority suggestions, dependency tracking, and Kanban views — all with a generous free tier.',
+                  },
+                },
+              ],
+            },
+          ],
+        })
       }} />
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <Suspense fallback={null}>
