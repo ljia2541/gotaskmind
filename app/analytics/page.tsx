@@ -26,8 +26,8 @@ export default function AnalyticsPage() {
   });
   const [error, setError] = useState<string>('');
   // 语言状态
-  const [language, setLanguage] = useState<'zh' | 'en'>('zh');
-  const [translations, setTranslations] = useState(analyticsTranslations.zh);
+  const [language, setLanguage] = useState<'zh' | 'en'>('en');
+  const [translations, setTranslations] = useState(analyticsTranslations.en);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
   // 初始化加载数据
@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-blue-800 font-medium">体验模式</span>
+              <span className="text-blue-800 font-medium">Demo Mode</span>
               <span className="text-blue-600 text-sm">您正在使用演示版本，登录后可保存和管理您的真实数据</span>
             </div>
             <div className="flex gap-2">

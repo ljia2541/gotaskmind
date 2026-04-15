@@ -272,19 +272,19 @@ export function PersonalWorkStats({ tasks }: PersonalWorkStatsProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-primary">{weekOverview.totalTasks}</div>
-              <div className="text-sm text-muted-foreground">总任务数</div>
+              <div className="text-sm text-muted-foreground">Total Tasks</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{weekOverview.completedTasks}</div>
-              <div className="text-sm text-muted-foreground">已完成</div>
+              <div className="text-sm text-muted-foreground">Completed</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{weekOverview.totalHours}h</div>
-              <div className="text-sm text-muted-foreground">总工作时间</div>
+              <div className="text-sm text-muted-foreground">Total Work Time</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-amber-600">{weekOverview.completionRate}%</div>
-              <div className="text-sm text-muted-foreground">完成率</div>
+              <div className="text-sm text-muted-foreground">Completion Rate</div>
               <Progress value={weekOverview.completionRate} className="mt-2 h-2" />
             </div>
           </div>
@@ -437,7 +437,7 @@ export function PersonalWorkStats({ tasks }: PersonalWorkStatsProps) {
                   <div className="text-lg font-semibold">
                     {energyMatch.distribution.reduce((sum, d) => sum + (d.高能量 || 0), 0)}
                   </div>
-                  <div className="text-xs text-muted-foreground">高能量任务</div>
+                  <div className="text-xs text-muted-foreground">High Energy Tasks</div>
                 </div>
                 <div className="p-2 bg-muted/30 rounded">
                   <div className="flex justify-center mb-1">
@@ -446,7 +446,7 @@ export function PersonalWorkStats({ tasks }: PersonalWorkStatsProps) {
                   <div className="text-lg font-semibold">
                     {energyMatch.distribution.reduce((sum, d) => sum + (d.中能量 || 0), 0)}
                   </div>
-                  <div className="text-xs text-muted-foreground">中能量任务</div>
+                  <div className="text-xs text-muted-foreground">Medium Energy Tasks</div>
                 </div>
                 <div className="p-2 bg-muted/30 rounded">
                   <div className="flex justify-center mb-1">
@@ -455,7 +455,7 @@ export function PersonalWorkStats({ tasks }: PersonalWorkStatsProps) {
                   <div className="text-lg font-semibold">
                     {energyMatch.distribution.reduce((sum, d) => sum + (d.低能量 || 0), 0)}
                   </div>
-                  <div className="text-xs text-muted-foreground">低能量任务</div>
+                  <div className="text-xs text-muted-foreground">Low Energy Tasks</div>
                 </div>
               </div>
             </div>
@@ -490,15 +490,15 @@ export function PersonalWorkStats({ tasks }: PersonalWorkStatsProps) {
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="text-sm">高能量任务</span>
+              <span className="text-sm">High Energy Tasks</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-cyan-500" />
-              <span className="text-sm">中能量任务</span>
+              <span className="text-sm">Medium Energy Tasks</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-violet-500" />
-              <span className="text-sm">低能量任务</span>
+              <span className="text-sm">Low Energy Tasks</span>
             </div>
           </div>
         </CardContent>

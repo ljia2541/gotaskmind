@@ -21,7 +21,7 @@ import { PersonalKanbanBoard } from '@/components/personal-kanban-board';
 import { SmartScheduler } from '@/components/smart-scheduler';
 import { TimelineCalendar } from '@/components/timeline-calendar';
 
-// 导入任务和项目相关类型和配置
+// 导入和项目相关类型和配置
 import { Task, categoryLabels, priorityLabels, statusLabels, energyLevelLabels } from '@/types/task';
 import { Project, projectStatusLabels } from '@/types/project';
 import { useAuth } from '@/app/hooks/use-auth';
@@ -29,10 +29,10 @@ import { useFeatureAccess } from '@/app/hooks/use-feature-access';
 import { quotaService } from '@/app/lib/quota-service';
 
 export default function TaskManagementPage() {
-  // 认证状态
+  // Auth Status
   const { user, isAuthenticated, login, logout, isPro } = useAuth();
 
-  // 功能访问控制
+  // Feature Access Control
   const {
     canAccessKanban,
     canAccessCalendar,
@@ -40,18 +40,18 @@ export default function TaskManagementPage() {
     renderFeatureGate
   } = useFeatureAccess();
 
-  // 使用固定语言避免hydration问题
+  // Use fixed language to avoidhydrationIssue
   const [isClient, setIsClient] = useState(false);
 
-  // 确保只在客户端进行语言检测
+  // Ensure language detection only on client
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // 获取对应的翻译文本
-  const translations = isClient ? analyticsTranslations[LanguageService.getUserLanguage() || 'zh'] || analyticsTranslations['zh'] : analyticsTranslations['zh'];
+  // Get对应的翻译文本
+  const translations = isClient ? analyticsTranslations[LanguageService.getUserLanguage() || 'en'] || analyticsTranslations['en'] : analyticsTranslations['en'];
 
-  // 状态管理 - 基础状态
+  // 状态管理 - Base state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -60,7 +60,7 @@ export default function TaskManagementPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [showTasks, setShowTasks] = useState(false);
 
-  // 任务相关状态
+  // Task-related status
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -68,7 +68,7 @@ export default function TaskManagementPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'calendar' | 'scheduler'>('list');
   
-  // 日期范围筛选状态
+  // Date Range Filter Status
   const [dateRange, setDateRange] = useState<{
     start: string;
     end: string;
@@ -111,15 +111,15 @@ export default function TaskManagementPage() {
     color: '#64748b',
   });
 
-  // 获取默认项目数据
+  // GetDefault项目数据
   function getDefaultProjects(): Project[] {
-    // 使用固定日期避免hydration问题
+    // Use fixed dates to avoidhydrationIssue
     const baseDate = new Date('2024-01-01T00:00:00.000Z');
     return [
       {
         id: 'project-1',
-        title: '个人任务',
-        description: '管理个人日常任务',
+        title: 'Personal Tasks',
+        description: '管理个人日常',
         status: 'active',
         deadline: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: baseDate.toISOString(),
@@ -127,8 +127,8 @@ export default function TaskManagementPage() {
       },
       {
         id: 'project-2',
-        title: '工作项目',
-        description: '公司相关任务和项目',
+        title: 'Work Projects',
+        description: '公司相关和项目',
         status: 'active',
         deadline: new Date(baseDate.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: baseDate.toISOString(),
@@ -138,21 +138,21 @@ export default function TaskManagementPage() {
   }
 
 
-  // 获取默认任务数据
+  // GetDefault数据
   function getDefaultTasks(): Task[] {
-    // 使用固定日期避免hydration问题
+    // Use fixed dates to avoidhydrationIssue
     const baseDate = new Date('2024-01-01T00:00:00.000Z');
     const tomorrow = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
     const nextWeek = new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // 使用时间戳确保唯一性
+    // Use timestamps for uniqueness
     const timestamp = baseDate.getTime();
 
     return [
       {
         id: `task-${timestamp}-1`,
         title: '完成项目提案',
-        description: '准备下周的项目提案文档',
+        description: '',
         status: 'todo',
         category: 'work',
         priority: 'high',
@@ -166,8 +166,8 @@ export default function TaskManagementPage() {
       },
       {
         id: `task-${timestamp}-2`,
-        title: '健身锻炼',
-        description: '去健身房进行1小时有氧运动',
+        title: 'Fitness Training',
+        description: 'Go to gym for1 hours cardio',
         status: 'in-progress',
         category: 'personal',
         priority: 'medium',
@@ -181,7 +181,7 @@ export default function TaskManagementPage() {
       },
       {
         id: `task-${timestamp}-3`,
-        title: '学习React',
+        title: 'React',
         description: '完成React官方文档的基础教程',
         status: 'todo',
         category: 'learning',
@@ -197,7 +197,7 @@ export default function TaskManagementPage() {
     ];
   }
 
-  // 任务去重函数 - 确保任务ID唯一
+  // 去重函数 - EnsureIDUnique
   function deduplicateTasks(tasks: Task[]): Task[] {
     const seenIds = new Set<string>();
     const uniqueTasks: Task[] = [];
@@ -207,7 +207,7 @@ export default function TaskManagementPage() {
         seenIds.add(task.id);
         uniqueTasks.push(task);
       } else {
-        // 如果发现重复ID，生成新的唯一ID
+        // If duplicate foundID，Generate new uniqueID
         const newTask = {
           ...task,
           id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -221,15 +221,15 @@ export default function TaskManagementPage() {
     return uniqueTasks;
   }
 
-  // 统一的数据初始化 - 包括项目和任务
+  // 统一的数据Initialize - 包括项目和
   useEffect(() => {
-    // 确保在客户端环境中运行
+    // Ensure running in client environment
     if (typeof window !== 'undefined' && !isInitialized) {
-      // 获取URL参数
+      // GetURL
       const urlParams = new URLSearchParams(window.location.search);
       const projectIdFromUrl = urlParams.get('projectId');
 
-      // 1. 加载项目数据 - 优先使用本地存储的数据
+      // 1.  - Use本地存储的数据
       let finalProjects: Project[] = [];
       const savedProjects = localStorage.getItem('projects');
       if (savedProjects) {
@@ -249,14 +249,14 @@ export default function TaskManagementPage() {
       setProjects(finalProjects);
 
 
-      // 2. 加载任务数据 - 优先使用本地存储的数据
+      // 2. 加载数据 - Use本地存储的数据
       let finalTasks: Task[] = [];
       const savedTasks = localStorage.getItem('tasks');
       if (savedTasks) {
         try {
           const parsedTasks = JSON.parse(savedTasks);
           if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
-            // 去重处理：确保任务ID唯一
+            // ：EnsureIDUnique
             finalTasks = deduplicateTasks(parsedTasks);
           } else {
             finalTasks = getDefaultTasks();
@@ -269,48 +269,48 @@ export default function TaskManagementPage() {
       }
       setTasks(finalTasks);
 
-      // 4. 处理URL参数 - 项目筛选
+      // 4. URL - 项目Filter
       if (projectIdFromUrl) {
         setSelectedProjectId(projectIdFromUrl);
-        // 检查项目是否存在，如果存在则设置表单的projectId
+        // 检查项目是存在，如果存在则Set表单的projectId
         const projectExists = finalProjects.some(p => p.id === projectIdFromUrl);
         if (projectExists) {
           setFormData(prev => ({ ...prev, projectId: projectIdFromUrl }));
         }
       }
 
-      // 保存到本地存储
+      // Save to local storage
       localStorage.setItem('projects', JSON.stringify(finalProjects));
       localStorage.setItem('tasks', JSON.stringify(finalTasks));
 
-      // 设置初始化完成标志
+      // SetInitialize完成标志
       setIsInitialized(true);
       setShowTasks(true);
     }
   }, [isInitialized]);
 
-  // 单独的useEffect处理Pro状态和配额清除
+  // useEffectPro状态和Quota清除
   useEffect(() => {
     if (isInitialized && isPro) {
-      console.log('🎉 用户是Pro会员，清除配额限制');
+      console.log('🎉 用户是ProMember，清除Quota限制');
       quotaService.clearQuotaHistory();
     }
   }, [isInitialized, isPro]);
 
-  // 处理搜索和过滤任务
+  // 搜索和过滤
   const filteredTasks = tasks.filter(task => {
-    // 项目筛选
+    // 项目Filter
     const projectMatch = selectedProjectId === 'all' || task.projectId === selectedProjectId;
 
-    // 状态筛选
+    // 状态Filter
     const statusMatch = activeTab === 'all' || task.status === activeTab;
 
-    // 搜索筛选
+    // Search and Filter
     const searchMatch = !searchQuery ||
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // 日期范围筛选
+    // Date Range Filter
     const dateMatch = (!dateRange.start && !dateRange.end) || 
       (() => {
         if (!task.dueDate) return false;
@@ -326,7 +326,7 @@ export default function TaskManagementPage() {
     return projectMatch && statusMatch && searchMatch && dateMatch;
   });
 
-  // 处理任务排序
+  // 排序
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortBy === 'createdAt') {
       return sortOrder === 'asc'
@@ -339,9 +339,9 @@ export default function TaskManagementPage() {
     }
   });
 
-  // 处理任务状态变更
+  // 状态变更
   function handleStatusChange(taskId: string, newStatus: Task['status']) {
-    // 创建更新后的任务列表
+    // Update后的List
     const updatedTasks = tasks.map(task => {
       if (task.id === taskId) {
         return {
@@ -353,14 +353,14 @@ export default function TaskManagementPage() {
       return task;
     });
 
-    // 更新状态
+    // Update状态
     setTasks(updatedTasks);
 
     // 尝试保存到localStorage
     try {
       localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     } catch (error) {
-      // 静默错误处理
+      // 静默错误
     }
   }
 
@@ -376,20 +376,20 @@ export default function TaskManagementPage() {
     });
   }
 
-  // 打开添加任务对话框
+  // 打开Add Task对话框
   const handleOpenAddDialog = () => {
-    // 检查任务配额（仅当选择了特定项目时）
+    // 检查Quota（Only when a specific project is selected）
     const targetProjectId = selectedProjectId === 'all' ? undefined : selectedProjectId;
     if (targetProjectId) {
       const projectTasks = tasks.filter(task => task.projectId === targetProjectId);
       const taskQuotaInfo = quotaService.getTaskQuotaInfo(projectTasks, isPro);
 
       if (!taskQuotaInfo.canCreateMoreTasks) {
-        alert(`项目任务配额已满！\n\n` +
-          `当前配额方案: ${taskQuotaInfo.planName}\n` +
-          `该项目已有: ${taskQuotaInfo.usedTaskQuota} 个任务\n` +
-          `任务上限: ${taskQuotaInfo.totalTaskQuota === Infinity ? '无限制' : taskQuotaInfo.totalTaskQuota + ' 个任务'}\n\n` +
-          `升级到Pro版本可获得无限制任务`);
+        alert(`项目Quota已满！\n\n` +
+          `当前Quota方案: ${taskQuotaInfo.planName}\n` +
+          `该项目已有: ${taskQuotaInfo.usedTaskQuota}  tasks\n` +
+          `: ${taskQuotaInfo.totalTaskQuota === Infinity ? 'Unlimited' : taskQuotaInfo.totalTaskQuota + '  tasks'}\n\n` +
+          `Upgrade toProVersion availableUnlimited`);
         return;
       }
     }
@@ -414,7 +414,7 @@ export default function TaskManagementPage() {
     setIsAddDialogOpen(true);
   };
 
-  // 打开编辑任务对话框
+  // 打开Edit对话框
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setFormData({
@@ -436,11 +436,11 @@ export default function TaskManagementPage() {
     setIsAddDialogOpen(true);
   };
 
-  // 处理表单提交 - 添加或编辑任务
+  // 表单提交 - Add或Edit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 如果是新增任务且有项目关联，检查任务配额
+    // 如果是新增且有项目，检查Quota
     if (!editingTask && formData.projectId) {
       try {
         const projectTasks = tasks.filter(task => task.projectId === formData.projectId);
@@ -450,8 +450,8 @@ export default function TaskManagementPage() {
           alert(error.message);
           return;
         }
-        // 其他错误类型，继续处理
-        console.error('任务配额检查错误:', error);
+        // Other错误类型，继续
+        console.error('Quota检查错误:', error);
       }
     }
 
@@ -459,7 +459,7 @@ export default function TaskManagementPage() {
     let updatedTasks;
 
     if (editingTask) {
-      // 编辑现有任务
+      // Edit现有
       updatedTasks = tasks.map(task =>
         task.id === editingTask.id
           ? {
@@ -470,7 +470,7 @@ export default function TaskManagementPage() {
           : task
       );
     } else {
-      // 添加新任务
+      // Add新
       const newTask: Task = {
         id: `task-${now}-${Math.random().toString(36).substr(2, 9)}`,
         ...formData,
@@ -480,39 +480,39 @@ export default function TaskManagementPage() {
       updatedTasks = [...tasks, newTask];
     }
 
-    // 更新状态和本地存储
+    // Update状态和本地存储
     setTasks(updatedTasks);
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
 
-    // 关闭对话框
+    // Close对话框
     setIsAddDialogOpen(false);
   };
 
-  // 打开任务详情
+  // 打开Details
   const handleOpenTaskDetail = (task: Task) => {
     setSelectedTask(task);
     setIsTaskDetailOpen(true);
   };
 
-  // 处理添加项目
+  // Add Project
   const handleOpenAddProjectDialog = () => {
-    // 检查项目配额（使用严格配额控制）
+    // 检查项目Quota（UseQuota控制）
     if (!editingProject) {
       const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
 
       if (!quotaInfo.canCreateMore) {
-        // 显示配额已满的错误信息
-        let errorMessage = `项目配额已满！\n\n` +
-          `当前配额方案: ${quotaInfo.quotaDescription}\n` +
-          `已使用: ${quotaInfo.usedQuota} 个项目\n` +
-          `配额上限: ${quotaInfo.totalQuota} 个项目`;
+        // 显示Quota已满的错误信息
+        let errorMessage = `项目Quota已满！\n\n` +
+          `当前Quota方案: ${quotaInfo.quotaDescription}\n` +
+          `Used: ${quotaInfo.usedQuota}  projects\n` +
+          `Quota: ${quotaInfo.totalQuota}  projects`;
 
-        // 如果是严格配额控制，添加特殊说明
+        // 如果是Quota控制，Add特殊说明
         if (quotaInfo.strictQuotaEnforced) {
-          errorMessage += `\n\n⚠️ 严格配额模式：一旦达到配额上限，删除项目也不会释放配额`;
-          errorMessage += `\n💡 解决方案：升级到Pro版本可获得 500 个项目配额`;
+          errorMessage += `\n\n⚠️ Quota模式：Quota，Delete项目也不会释放Quota`;
+          errorMessage += `\n💡 Resolve方案：Upgrade toProVersion available 500  projectsQuota`;
         } else {
-          errorMessage += `\n\n升级到Pro版本可获得 500 个项目配额`;
+          errorMessage += `\n\nUpgrade toProVersion available 500  projectsQuota`;
         }
 
         alert(errorMessage);
@@ -531,11 +531,11 @@ export default function TaskManagementPage() {
     setIsAddProjectDialogOpen(true);
   };
 
-  // 处理项目表单提交
+  // 项目表单提交
   const handleProjectSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 如果是新增项目，再次检查配额
+    // 如果是新增项目，Quota
     if (!editingProject) {
       try {
         quotaService.checkProjectQuota(projects, isPro);
@@ -544,8 +544,8 @@ export default function TaskManagementPage() {
           alert(error.message);
           return;
         }
-        // 其他错误类型，继续处理
-        console.error('配额检查错误:', error);
+        // Other错误类型，继续
+        console.error('Quota检查错误:', error);
       }
     }
 
@@ -553,7 +553,7 @@ export default function TaskManagementPage() {
     let updatedProjects;
 
     if (editingProject) {
-      // 编辑现有项目
+      // Edit现有项目
       updatedProjects = projects.map(project =>
         project.id === editingProject.id
           ? {
@@ -564,7 +564,7 @@ export default function TaskManagementPage() {
           : project
       );
     } else {
-      // 添加新项目
+      // AddNew Project
       const newProject: Project = {
         id: `project-${now}-${Math.random().toString(36).substr(2, 9)}`,
         ...projectFormData,
@@ -573,71 +573,71 @@ export default function TaskManagementPage() {
       updatedProjects = [...projects, newProject];
     }
 
-    // 更新状态和本地存储
+    // Update状态和本地存储
     setProjects(updatedProjects);
     localStorage.setItem('projects', JSON.stringify(updatedProjects));
 
-    // 关闭对话框
+    // Close对话框
     setIsAddProjectDialogOpen(false);
   };
 
-  // 处理项目删除
+  // 项目Delete
   const handleDeleteProject = async (projectId: string) => {
-    console.log('开始删除项目:', projectId);
+    console.log('开始Delete项目:', projectId);
 
     try {
-      // 1. 计算要删除的数据
+      // 1. 计算要Delete的数据
       const projectToDelete = projects.find(p => p.id === projectId);
       const associatedTasks = tasks.filter(task => task.projectId === projectId);
 
-      console.log('删除项目:', projectToDelete?.title);
-      console.log('关联任务数量:', associatedTasks.length);
+      console.log('Delete项目:', projectToDelete?.title);
+      console.log('Task count:', associatedTasks.length);
 
-      // 2. 更新项目列表（过滤掉要删除的项目）
+      // 2. UpdateProject List（过滤掉要Delete的项目）
       const updatedProjects = projects.filter(project => project.id !== projectId);
 
-      // 3. 更新任务列表（移除关联任务或重置它们的projectId）
+      // 3. UpdateList（移除或重置它们的projectId）
       const updatedTasks = tasks.filter(task => task.projectId !== projectId);
 
-      // 4. 更新本地存储
+      // 4. Update本地存储
       localStorage.setItem('projects', JSON.stringify(updatedProjects));
       localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      console.log('本地存储已更新');
+      console.log('本地存储已Update');
 
-      // 5. 更新React状态
+      // 5. UpdateReact状态
       setProjects(updatedProjects);
       setTasks(updatedTasks);
 
-      // 6. 如果删除的是当前选中的项目，重置为"所有任务"
+      // 6. 如果Delete的是当前selected的项目，重置为"All Tasks"
       if (selectedProjectId === projectId) {
         setSelectedProjectId('all');
       }
 
-      // 7. 显示成功提示
-      toast.success(`项目"${projectToDelete?.title}"已删除，同时删除了${associatedTasks.length}个关联任务`);
+      // 7. Show success message
+      toast.success(`项目"${projectToDelete?.title}"已Delete，Delete${associatedTasks.length}`);
 
-      // 8. 关闭删除确认对话框
+      // 8. CloseDelete确认对话框
       setIsDeleteDialogOpen(false);
 
-      console.log('删除操作完成');
+      console.log('Delete操作完成');
 
     } catch (error) {
-      console.error('删除项目失败:', error);
-      toast.error('删除项目失败，请重试');
+      console.error('Delete项目失败:', error);
+      toast.error('Delete项目失败，Please retry');
     }
   };
 
-  // 设置要删除的项目ID
+  // Set要Delete的项目ID
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 打开删除确认对话框
+  // 打开Delete确认对话框
   const handleOpenDeleteDialog = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     const associatedTasks = tasks.filter(task => task.projectId === projectId);
 
-    console.log('打开删除对话框:', {
+    console.log('打开Delete对话框:', {
       projectId,
       projectName: project?.title,
       associatedTasksCount: associatedTasks.length
@@ -647,7 +647,7 @@ export default function TaskManagementPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  // 处理项目编辑
+  // 项目Edit
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
     setProjectFormData({
@@ -663,7 +663,7 @@ export default function TaskManagementPage() {
   // JSX 渲染部分
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* 头部导航 */}
+      {/* Header Nav */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -671,7 +671,7 @@ export default function TaskManagementPage() {
             <span className="font-semibold text-lg text-foreground">GoTaskMind</span>
           </div>
 
-          {/* 桌面导航 - 放在右侧 */}
+          {/* Desktop Nav - 放在右侧 */}
           <nav className="hidden md:flex items-center gap-6 ml-auto">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {translations.navigation.home}
@@ -690,16 +690,16 @@ export default function TaskManagementPage() {
                   if (user && user.email) {
                     localStorage.setItem('pending_purchase', JSON.stringify({
                       planId: 'pro-monthly',
-                      feature: '数据分析',
+                      feature: 'Analytics',
                       timestamp: Date.now(),
                       returnTo: '/analytics'
                     }))
                   }
-                  // 跳转到定价页面
+                  // Go to Pricing
                   window.location.href = '/pricing'
                 }}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                title="需要Pro版本"
+                title="需要ProVersion"
               >
                 {translations.navigation.analytics}
                 <span className="text-xs">🔒</span>
@@ -716,7 +716,7 @@ export default function TaskManagementPage() {
             )}
           </nav>
 
-          {/* 移动端导航触发器 */}
+          {/* Mobile Nav Trigger */}
           <div className="md:hidden">
             <Button variant="ghost" size="sm" className="p-2" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -725,7 +725,7 @@ export default function TaskManagementPage() {
         </div>
       </header>
 
-      {/* 移动端导航菜单 */}
+      {/* Mobile Nav菜单 */}
       {isMobileMenuOpen && (
         <nav className="md:hidden bg-card border-b border-border py-4 px-4 flex flex-col gap-4">
           <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">{translations.navigation.home}</Link>
@@ -739,16 +739,16 @@ export default function TaskManagementPage() {
                 if (user && user.email) {
                   localStorage.setItem('pending_purchase', JSON.stringify({
                     planId: 'pro-monthly',
-                    feature: '数据分析',
+                    feature: 'Analytics',
                     timestamp: Date.now(),
                     returnTo: '/analytics'
                   }))
                 }
-                // 跳转到定价页面
+                // Go to Pricing
                 window.location.href = '/pricing'
               }}
               className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-left"
-              title="需要Pro版本"
+              title="需要ProVersion"
             >
               {translations.navigation.analytics}
               <span className="text-xs">🔒</span>
@@ -757,14 +757,14 @@ export default function TaskManagementPage() {
         </nav>
       )}
 
-      {/* 未登录用户提示横幅 */}
+      {/* 未Login用户提示横幅 */}
       {!isAuthenticated && (
         <div className="bg-blue-50 border-b border-blue-200 py-3 px-4">
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-blue-800 font-medium">体验模式</span>
-              <span className="text-blue-600 text-sm">您正在使用演示版本，登录后可保存和管理您的真实数据</span>
+              <span className="text-blue-800 font-medium">Demo Mode</span>
+              <span className="text-blue-600 text-sm">You are using the demo version. Log in to save and manage your real data.</span>
             </div>
             <div className="flex gap-2">
               <Button
@@ -773,24 +773,24 @@ export default function TaskManagementPage() {
                 className="border-blue-300 text-blue-700 hover:bg-blue-100"
                 onClick={() => window.location.href = '/'}
               >
-                返回首页登录
+                Log in to continue
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 主内容区 */}
+      {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* 页面标题和操作区 */}
+        {/* Page Title and Actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold">{translations.navigation.tasks}</h1>
-            <p className="text-muted-foreground">管理和跟踪您的项目与任务</p>
+            <p className="text-muted-foreground">Manage and track your projects and tasks</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* 视图切换按钮 */}
+            {/* View Toggle */}
             <div className="flex bg-muted p-1 rounded-lg">
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -799,7 +799,7 @@ export default function TaskManagementPage() {
                 className="h-8 px-3"
               >
                 <List className="w-4 h-4 mr-2" />
-                列表
+                List
               </Button>
               <Button
                 variant={viewMode === 'kanban' ? 'default' : 'ghost'}
@@ -811,10 +811,10 @@ export default function TaskManagementPage() {
                 }}
                 disabled={!canAccessKanban}
                 className={`h-8 px-3 ${!canAccessKanban ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={!canAccessKanban ? '需要Pro版本' : '看板视图'}
+                title={!canAccessKanban ? '需要ProVersion' : 'Kanban视图'}
               >
                 <LayoutGrid className="w-4 h-4 mr-2" />
-                看板
+                Kanban
                 {!canAccessKanban && <span className="ml-1 text-xs">🔒</span>}
               </Button>
               <Button
@@ -827,10 +827,10 @@ export default function TaskManagementPage() {
                 }}
                 disabled={!canAccessCalendar}
                 className={`h-8 px-3 ${!canAccessCalendar ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={!canAccessCalendar ? '需要Pro版本' : '日历视图'}
+                title={!canAccessCalendar ? '需要ProVersion' : 'Calendar视图'}
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                日历
+                Calendar
                 {!canAccessCalendar && <span className="ml-1 text-xs">🔒</span>}
               </Button>
               <Button
@@ -843,62 +843,62 @@ export default function TaskManagementPage() {
                 }}
                 disabled={!canAccessScheduler}
                 className={`h-8 px-3 ${!canAccessScheduler ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={!canAccessScheduler ? '需要Pro版本' : '智能安排'}
+                title={!canAccessScheduler ? '需要ProVersion' : 'Smart Schedule'}
               >
                 <Brain className="w-4 h-4 mr-2" />
-                智能安排
+                Smart Schedule
                 {!canAccessScheduler && <span className="ml-1 text-xs">🔒</span>}
               </Button>
             </div>
 
-            {/* 日期范围选择器 */}
+            {/* Date Range Picker */}
             <div className="flex gap-2 items-center">
               <div className="flex flex-col">
                 <Input
                   type="date"
-                  placeholder="开始日期"
+                  placeholder="Start Date"
                   className="w-36"
                   value={dateRange.start}
                   onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                 />
-                <span className="text-xs text-muted-foreground mt-1">开始日期</span>
+                <span className="text-xs text-muted-foreground mt-1">Start Date</span>
               </div>
-              <span className="text-muted-foreground">至</span>
+              <span className="text-muted-foreground">to</span>
               <div className="flex flex-col">
                 <Input
                   type="date"
-                  placeholder="结束日期"
+                  placeholder="End Date"
                   className="w-36"
                   value={dateRange.end}
                   onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                 />
-                <span className="text-xs text-muted-foreground mt-1">结束日期</span>
+                <span className="text-xs text-muted-foreground mt-1">End Date</span>
               </div>
             </div>
 
-            {/* 搜索框 */}
+            {/* Search */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 type="text"
-                placeholder="搜索任务..."
+                placeholder="Search tasks..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {/* 清除筛选按钮 */}
+            {/* Clear Filters按钮 */}
             <Button
               variant="outline"
               onClick={() => setDateRange({ start: '', end: '' })}
               className="h-9 px-3"
             >
-              清除筛选
+              Clear Filters
             </Button>
 
             <Button variant="default" onClick={handleOpenAddDialog}>
-              添加任务
+              Add Task
             </Button>
 
             <Button
@@ -912,14 +912,14 @@ export default function TaskManagementPage() {
               })()}
             >
               <PlusCircle className="w-4 h-4 mr-2" />
-              添加项目
+              Add Project
               {(() => {
                 const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
                 if (warningLevel === 'danger') {
-                  return <span className="ml-2 text-xs">({quotaInfo.strictQuotaEnforced ? '严格配额' : '配额已满'})</span>;
+                  return <span className="ml-2 text-xs">({quotaInfo.strictQuotaEnforced ? 'Quota' : 'Quota已满'})</span>;
                 } else if (warningLevel === 'warning') {
-                  return <span className="ml-2 text-xs">({quotaInfo.remainingQuota}剩余)</span>;
+                  return <span className="ml-2 text-xs">({quotaInfo.remainingQuota}Remaining)</span>;
                 }
                 return null;
               })()}
@@ -927,14 +927,14 @@ export default function TaskManagementPage() {
           </div>
         </div>
 
-        {/* 项目和任务展示区 */}
+        {/* 项目和展示区 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* 左侧项目列表 */}
+          {/* 左侧Project List */}
           <div className="md:col-span-1">
             <Card className="p-4 sticky top-24">
-              <h2 className="text-lg font-semibold mb-4">项目列表</h2>
+              <h2 className="text-lg font-semibold mb-4">Project List</h2>
 
-              {/* 配额信息显示（默认项目不计入配额） */}
+              {/* Quota（Default项目不计入Quota） */}
               {(() => {
                 const quotaInfo = quotaService.getQuotaInfo(projects, isPro);
                 const warningLevel = quotaService.getQuotaWarningLevel(quotaInfo);
@@ -944,7 +944,7 @@ export default function TaskManagementPage() {
                   <div className={`mb-4 p-3 rounded-lg border ${statusColor}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">
-                        {quotaInfo.planName} 配额
+                        {quotaInfo.planName} Quota
                       </span>
                       <span className="text-xs">
                         {quotaService.formatQuotaForDisplay(quotaInfo)}
@@ -961,18 +961,18 @@ export default function TaskManagementPage() {
                     </div>
                     <div className="text-xs opacity-75">
                       {quotaInfo.remainingQuota > 0
-                        ? `可创建 ${quotaInfo.remainingQuota} 个自定义项目（默认项目不计入配额）`
+                        ? `Available ${quotaInfo.remainingQuota} （Default项目不计入Quota）`
                         : quotaInfo.strictQuotaEnforced
-                          ? `严格配额模式：删除项目也不会释放配额`
-                          : '配额已满，请升级到Pro版本'
+                          ? `Quota模式：Delete项目也不会释放Quota`
+                          : 'Quota已满，Please upgrade toProVersion'
                       }
                     </div>
-                    {/* 严格配额状态显示 */}
+                    {/* Quota状态显示 */}
                     {quotaInfo.strictQuotaEnforced && (
                       <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                        <div className="font-medium mb-1">⚠️ 严格配额模式已生效</div>
-                        <div>已达到历史配额上限 ({quotaInfo.quotaHistory.peakProjectCount} 个项目)</div>
-                        <div>删除项目不会释放新配额</div>
+                        <div className="font-medium mb-1">⚠️ Quota模式已生效</div>
+                        <div>已达到历史Quota ({quotaInfo.quotaHistory.peakProjectCount}  projects)</div>
+                        <div>Delete项目不会释放新Quota</div>
                       </div>
                     )}
                     {!isPro && quotaInfo.upgradeAvailable && (
@@ -983,7 +983,7 @@ export default function TaskManagementPage() {
                           className="w-full text-xs h-7"
                           onClick={() => window.location.href = '/pricing'}
                         >
-                          升级到Pro (500项目)
+                          Upgrade toPro (500项目)
                         </Button>
                       </div>
                     )}
@@ -995,7 +995,7 @@ export default function TaskManagementPage() {
                   className={`px-3 py-2 rounded-md text-left transition-colors ${selectedProjectId === 'all' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}
                   onClick={() => setSelectedProjectId('all')}
                 >
-                  所有任务
+                  All Tasks
                 </button>
                 {projects.map((project) => {
                   const projectTasks = tasks.filter(task => task.projectId === project.id);
@@ -1013,7 +1013,7 @@ export default function TaskManagementPage() {
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }}></div>
                           <span className="truncate">{project.title}</span>
                         </div>
-                        {/* 任务配额显示 */}
+                        {/* Quota显示 */}
                         <div className="ml-5 mt-1">
                           <div className={`text-xs ${
                             warningLevel === 'danger' ? 'text-red-600' :
@@ -1025,7 +1025,7 @@ export default function TaskManagementPage() {
                             <div className={`text-xs ${
                               warningLevel === 'danger' ? 'text-red-500' : 'text-amber-500'
                             }`}>
-                              {warningLevel === 'danger' ? '任务已满' : '接近限制'}
+                              {warningLevel === 'danger' ? 'Task limit reached' : '接近限制'}
                             </div>
                           )}
                         </div>
@@ -1043,10 +1043,10 @@ export default function TaskManagementPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditProject(project)}>
-                            编辑
+                            Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleOpenDeleteDialog(project.id)}>
-                            删除
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1055,9 +1055,9 @@ export default function TaskManagementPage() {
                 })}
               </div>
 
-              {/* 排序控制 */}
+              {/* Sort Control */}
               <div className="mt-6">
-                <h3 className="text-sm font-medium mb-2">排序方式</h3>
+                <h3 className="text-sm font-medium mb-2">Sort By</h3>
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'createdAt' | 'dueDate')}>
@@ -1065,8 +1065,8 @@ export default function TaskManagementPage() {
                         <SelectValue placeholder="选择排序字段" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="createdAt">创建时间</SelectItem>
-                        <SelectItem value="dueDate">截止日期</SelectItem>
+                        <SelectItem value="createdAt">Created</SelectItem>
+                        <SelectItem value="dueDate">Due Date</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -1084,11 +1084,11 @@ export default function TaskManagementPage() {
             </Card>
           </div>
 
-          {/* 右侧任务列表 */}
+          {/* 右侧List */}
           <div className="md:col-span-3">
             {/* 根据视图模式显示不同内容 */}
             {viewMode === 'kanban' ? (
-              /* 看板视图 - 需要Pro版本 */
+              /* Kanban视图 - 需要ProVersion */
               renderFeatureGate({
                 feature: 'kanban',
                 children: (
@@ -1104,14 +1104,14 @@ export default function TaskManagementPage() {
                     ) : (
                       <Card className="p-8 text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                        <h3 className="text-lg font-medium mb-2">Loading......</h3>
                       </Card>
                     )}
                   </div>
                 )
               })
             ) : viewMode === 'calendar' ? (
-              /* 日历视图 - 需要Pro版本 */
+              /* Calendar视图 - 需要ProVersion */
               renderFeatureGate({
                 feature: 'calendar',
                 children: (
@@ -1143,7 +1143,7 @@ export default function TaskManagementPage() {
                             comments: [],
                           };
 
-                          // 更新任务 scheduledSlots 中的 taskId
+                          // Update scheduledSlots  taskId
                           if (newTask.scheduledSlots) {
                             newTask.scheduledSlots = newTask.scheduledSlots.map(slot => ({
                               ...slot,
@@ -1159,14 +1159,14 @@ export default function TaskManagementPage() {
                     ) : (
                       <Card className="p-8 text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                        <h3 className="text-lg font-medium mb-2">Loading......</h3>
                       </Card>
                     )}
                   </div>
                 )
               })
             ) : viewMode === 'scheduler' ? (
-              /* 智能安排视图 - 需要Pro版本 */
+              /* Smart Schedule视图 - 需要ProVersion */
               renderFeatureGate({
                 feature: 'scheduler',
                 children: (
@@ -1182,38 +1182,38 @@ export default function TaskManagementPage() {
                     ) : (
                       <Card className="p-8 text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                        <h3 className="text-lg font-medium mb-2">加载中...</h3>
+                        <h3 className="text-lg font-medium mb-2">Loading......</h3>
                       </Card>
                     )}
                   </div>
                 )
               })
             ) : (
-              /* 列表视图 */
+              /* List视图 */
               <>
-                {/* 状态标签页 */}
+                {/* Status tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
                   <TabsList className="grid grid-cols-4 w-full">
                     <TabsTrigger value="all">
-                      全部
+                      
                       <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="todo">
-                      待办
+                      To Do
                       <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'todo').length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="in-progress">
-                      进行中
+                      In Progress
                       <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'in-progress').length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="completed">
-                      已完成
+                      Done
                       <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{filteredTasks.filter(task => task.status === 'completed').length}</span>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
 
-                {/* 任务卡片列表 */}
+                {/* 卡片List */}
                 {showTasks && sortedTasks.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4">
                     {sortedTasks.map((task) => (
@@ -1236,10 +1236,10 @@ export default function TaskManagementPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleEditTask(task)}>
-                                编辑
+                                Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleOpenTaskDetail(task)}>
-                                详情
+                                Details
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1253,7 +1253,7 @@ export default function TaskManagementPage() {
                           {task.description}
                         </p>
 
-                        {/* 新增字段显示 */}
+                        {/* New field display */}
                         <div className="flex flex-wrap gap-2 mb-3 text-xs">
                           {task.estimatedHours && (
                             <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 px-2 py-1 rounded-full">
@@ -1267,19 +1267,19 @@ export default function TaskManagementPage() {
                           )}
                           {task.dependencies && task.dependencies.length > 0 && (
                             <span className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100 px-2 py-1 rounded-full">
-                              🔗 {task.dependencies.length} 依赖
+                              🔗 {task.dependencies.length} 
                             </span>
                           )}
                           {task.isTimeScheduled && (
                             <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-2 py-1 rounded-full">
-                              📅 已安排
+                              📅 Scheduled
                             </span>
                           )}
                         </div>
 
                         <div className="flex flex-wrap justify-between items-center gap-2">
                           <div className="text-xs text-muted-foreground">
-                            {task.dueDate && `截止: ${formatDate(task.dueDate)}`}
+                            {task.dueDate && `Due: ${formatDate(task.dueDate)}`}
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -1304,13 +1304,13 @@ export default function TaskManagementPage() {
                 ) : (
                   <Card className="p-8 text-center">
                     <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">暂无任务</h3>
+                    <h3 className="text-lg font-medium mb-2">None</h3>
                     <p className="text-muted-foreground mb-6">
-                      {selectedProjectId !== 'all' ? `当前项目没有${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}任务` : `暂无${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}任务`}
+                      {selectedProjectId !== 'all' ? `当前项目没有${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}` : `None${activeTab !== 'all' ? `"${statusLabels[activeTab as keyof typeof statusLabels]}"` : ''}`}
                     </p>
                     <Button variant="default" onClick={handleOpenAddDialog}>
                       <PlusSquare className="h-4 w-4 mr-2" />
-                      添加任务
+                      Add Task
                     </Button>
                   </Card>
                 )}
@@ -1320,16 +1320,16 @@ export default function TaskManagementPage() {
         </div>
       </main>
 
-      {/* 添加/编辑任务对话框 */}
+      {/* Add/Edit对话框 */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTask ? '编辑任务' : '添加任务'}</DialogTitle>
+            <DialogTitle>{editingTask ? 'Edit' : 'Add Task'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">任务标题</Label>
+              <Label htmlFor="title">Task Title</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -1339,7 +1339,7 @@ export default function TaskManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">任务描述</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -1350,7 +1350,7 @@ export default function TaskManagementPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">状态</Label>
+                <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as Task['status'] }))}
@@ -1367,13 +1367,13 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">分类</Label>
+                <Label htmlFor="category">Category</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as Task['category'] }))}
                 >
                   <SelectTrigger id="category">
-                    <SelectValue placeholder="选择分类" />
+                    <SelectValue placeholder="选择Category" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(categoryLabels).map(([key, value]) => (
@@ -1384,13 +1384,13 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority">优先级</Label>
+                <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as Task['priority'] }))}
                 >
                   <SelectTrigger id="priority">
-                    <SelectValue placeholder="选择优先级" />
+                    <SelectValue placeholder="选择Priority" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(priorityLabels).map(([key, value]) => (
@@ -1401,7 +1401,7 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dueDate">截止日期</Label>
+                <Label htmlFor="dueDate">Due Date</Label>
                 <Input
                   id="dueDate"
                   type="date"
@@ -1423,7 +1423,7 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="energyLevel">能量级别</Label>
+                <Label htmlFor="energyLevel">Energy Level</Label>
                 <Select
                   value={formData.energyLevel}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, energyLevel: value as Task['energyLevel'] }))}
@@ -1432,9 +1432,9 @@ export default function TaskManagementPage() {
                     <SelectValue placeholder="选择能量级别" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="high">高能量 ⚡</SelectItem>
-                    <SelectItem value="medium">中能量 🔋</SelectItem>
-                    <SelectItem value="low">低能量 🌙</SelectItem>
+                    <SelectItem value="high">High Energy ⚡</SelectItem>
+                    <SelectItem value="medium">Medium Energy 🔋</SelectItem>
+                    <SelectItem value="low">Low Energy 🌙</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1442,7 +1442,7 @@ export default function TaskManagementPage() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="projectId">项目</Label>
+                <Label htmlFor="projectId">Projects</Label>
                 <Select
                   value={formData.projectId || 'none'}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === 'none' ? undefined : value }))}
@@ -1451,7 +1451,7 @@ export default function TaskManagementPage() {
                     <SelectValue placeholder="选择项目" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">无项目</SelectItem>
+                    <SelectItem value="none">No Projects</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
                     ))}
@@ -1460,20 +1460,20 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dependencies">任务依赖（可选）</Label>
+                <Label htmlFor="dependencies">（Optional）</Label>
                 <Input
                   id="dependencies"
-                  placeholder="输入任务ID，多个用逗号分隔，如 task_1, task_2"
+                  placeholder="输入ID，Multiple, separated by commas，如 task_1, task_2"
                   value={formData.dependencies.join(', ')}
                   onChange={(e) => setFormData(prev => ({ ...prev, dependencies: e.target.value.split(',').map(d => d.trim()).filter(d => d) }))}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  当前可用任务ID: {tasks.filter(t => t.id.startsWith('task_')).map(t => t.id).join(', ') || '无task_*格式的任务'}
+                  当前可用ID: {tasks.filter(t => t.id.startsWith('task_')).map(t => t.id).join(', ') || '无task_*格式的'}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="preferredDate">偏好执行日期（可选）</Label>
+                <Label htmlFor="preferredDate">Preferred execution date（Optional）</Label>
                 <Input
                   id="preferredDate"
                   type="date"
@@ -1481,7 +1481,7 @@ export default function TaskManagementPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, preferredDate: e.target.value }))}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  智能安排时会尽量安排在此日期
+                  Smart Schedule时会尽量安排在此日期
                 </p>
               </div>
             </div>
@@ -1493,26 +1493,26 @@ export default function TaskManagementPage() {
                 onClick={() => setIsAddDialogOpen(false)}
                 className="w-full sm:w-auto"
               >
-                取消
+                Cancel
               </Button>
               <Button type="submit" className="w-full sm:w-auto">
-                {editingTask ? '更新' : '添加'}
+                {editingTask ? 'Update' : 'Add'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* 添加/编辑项目对话框 */}
+      {/* Add/Edit项目对话框 */}
       <Dialog open={isAddProjectDialogOpen} onOpenChange={setIsAddProjectDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingProject ? '编辑项目' : '添加项目'}</DialogTitle>
+            <DialogTitle>{editingProject ? 'Edit项目' : 'Add Project'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleProjectSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="project-title">项目名称</Label>
+              <Label htmlFor="project-title">Project Name</Label>
               <Input
                 id="project-title"
                 value={projectFormData.title}
@@ -1522,7 +1522,7 @@ export default function TaskManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="project-description">项目描述</Label>
+              <Label htmlFor="project-description">项目Description</Label>
               <Textarea
                 id="project-description"
                 value={projectFormData.description}
@@ -1533,7 +1533,7 @@ export default function TaskManagementPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="project-status">状态</Label>
+                <Label htmlFor="project-status">Status</Label>
                 <Select
                   value={projectFormData.status}
                   onValueChange={(value) => setProjectFormData(prev => ({ ...prev, status: value as Project['status'] }))}
@@ -1550,7 +1550,7 @@ export default function TaskManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="project-deadline">截止日期</Label>
+                <Label htmlFor="project-deadline">Due Date</Label>
                 <Input
                   id="project-deadline"
                   type="date"
@@ -1561,7 +1561,7 @@ export default function TaskManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="project-color">项目颜色</Label>
+              <Label htmlFor="project-color">Project Color</Label>
               <Input
                 id="project-color"
                 type="color"
@@ -1572,17 +1572,17 @@ export default function TaskManagementPage() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsAddProjectDialogOpen(false)}>
-                取消
+                Cancel
               </Button>
               <Button type="submit">
-                {editingProject ? '更新' : '添加'}
+                {editingProject ? 'Update' : 'Add'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* 任务详情对话框 */}
+      {/* Details对话框 */}
       <Dialog open={isTaskDetailOpen} onOpenChange={setIsTaskDetailOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -1592,27 +1592,27 @@ export default function TaskManagementPage() {
           {selectedTask && (
             <div className="space-y-4 py-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">描述</h3>
-                <p className="text-sm">{selectedTask.description || '无描述'}</p>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                <p className="text-sm">{selectedTask.description || '无Description'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">状态</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
                   <Badge variant="secondary">
                     {statusLabels[selectedTask.status]?.label || selectedTask.status}
                   </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">分类</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
                   <Badge variant="outline">
                     {categoryLabels[selectedTask.category]?.label || selectedTask.category}
                   </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">优先级</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Priority</h3>
                   <Badge
                     variant={selectedTask.priority === 'high' ? 'destructive' : selectedTask.priority === 'medium' ? 'default' : 'secondary'}
                     className={
@@ -1625,14 +1625,14 @@ export default function TaskManagementPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">截止日期</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Due Date</h3>
                   <p>{selectedTask.dueDate ? formatDate(selectedTask.dueDate) : '无'}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">项目</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Projects</h3>
                   <p>
                     {selectedTask.projectId
                       ? projects.find(p => p.id === selectedTask.projectId)?.title || '未知项目'
@@ -1642,41 +1642,41 @@ export default function TaskManagementPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">预估时间</h3>
-                  <p>{selectedTask.estimatedHours ? `${selectedTask.estimatedHours} 小时` : '未设置'}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Estimated Time</h3>
+                  <p>{selectedTask.estimatedHours ? `${selectedTask.estimatedHours} 小时` : '未Set'}</p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">能量级别</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Energy Level</h3>
                   <div className="flex items-center gap-1">
                     <span>
-                      {selectedTask.energyLevel === 'high' ? '⚡ 高能量' :
-                       selectedTask.energyLevel === 'medium' ? '🔋 中等能量' :
-                       selectedTask.energyLevel === 'low' ? '🌙 低能量' : '未设置'}
+                      {selectedTask.energyLevel === 'high' ? '⚡ High Energy' :
+                       selectedTask.energyLevel === 'medium' ? '🔋 等能量' :
+                       selectedTask.energyLevel === 'low' ? '🌙 Low Energy' : '未Set'}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">任务依赖</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1"></h3>
                   <p>
                     {selectedTask.dependencies && selectedTask.dependencies.length > 0
                       ? selectedTask.dependencies.join(', ')
-                      : '无依赖'
+                      : 'No dependencies'
                     }
                   </p>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">创建时间</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Created</h3>
                 <p className="text-sm">{formatDate(selectedTask.createdAt)}</p>
               </div>
 
-              {/* 智能时间安排相关信息 */}
+              {/* Smart Schedule Info */}
               {selectedTask.isTimeScheduled && selectedTask.scheduledSlots && selectedTask.scheduledSlots.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">已安排时间</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Scheduled时间</h3>
                   <div className="space-y-1">
                     {selectedTask.scheduledSlots.map(slot => (
                       <div key={slot.id} className="text-sm p-2 bg-muted rounded">
@@ -1702,16 +1702,16 @@ export default function TaskManagementPage() {
 
               {selectedTask.timeConstraints && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">时间约束</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Time constraints</h3>
                   <div className="text-sm space-y-1">
                     {selectedTask.timeConstraints.earliestStartTime && (
-                      <div>最早开始：{selectedTask.timeConstraints.earliestStartTime}</div>
+                      <div>Earliest start：{selectedTask.timeConstraints.earliestStartTime}</div>
                     )}
                     {selectedTask.timeConstraints.latestEndTime && (
-                      <div>最晚结束：{selectedTask.timeConstraints.latestEndTime}</div>
+                      <div>Latest end：{selectedTask.timeConstraints.latestEndTime}</div>
                     )}
                     {selectedTask.timeConstraints.flexibleDates !== undefined && (
-                      <div>日期灵活：{selectedTask.timeConstraints.flexibleDates ? '是' : '否'}</div>
+                      <div>Flexible dates：{selectedTask.timeConstraints.flexibleDates ? '是' : ''}</div>
                     )}
                   </div>
                 </div>
@@ -1719,13 +1719,13 @@ export default function TaskManagementPage() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsTaskDetailOpen(false)}>
-                  关闭
+                  Close
                 </Button>
                 <Button onClick={() => {
                   setIsTaskDetailOpen(false);
                   handleEditTask(selectedTask);
                 }}>
-                  编辑
+                  Edit
                 </Button>
               </DialogFooter>
             </div>
@@ -1733,7 +1733,7 @@ export default function TaskManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 项目删除确认对话框 */}
+      {/* 项目Delete确认对话框 */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -1741,7 +1741,7 @@ export default function TaskManagementPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.432-3L13.216 7H8.784c-.773 1.333-1.892 2-3.432 2H4.5c-1.548 0-2.5-1.452-2.5-3V4.5C2 3.052 3.052 2 4.5 2h1.938l1.5 1.5H8c.646 0 1.258.125 1.736.328l4.06 2.928c.37.266.688.598 1.066.598.773 0 1.48-.276 2.032-.633 2.032-1.668 0-2.896-2.132-3.032l-4.06-2.928c-.378-.266-.724-.598-1.066-.598H4.5z" />
               </svg>
-              确认删除项目
+              确认Delete项目
             </DialogTitle>
           </DialogHeader>
 
@@ -1775,10 +1775,10 @@ export default function TaskManagementPage() {
                         </svg>
                         <div>
                           <p className="text-sm font-medium text-red-800">
-                            此项目有 <span className="font-bold">{associatedTasks.length}</span> 个关联任务
+                            此项目有 <span className="font-bold">{associatedTasks.length}</span> 
                           </p>
                           <p className="text-xs text-red-600 mt-1">
-                            删除项目将同时删除这些任务，此操作无法撤销！
+                            Delete项目将Delete这些，This action cannot be undone！
                           </p>
                         </div>
                       </div>
@@ -1786,7 +1786,7 @@ export default function TaskManagementPage() {
                   )}
 
                   <div className="text-sm text-muted-foreground">
-                    <p>确定要删除这个项目吗？</p>
+                    <p>确定要Delete这 projects？</p>
                   </div>
                 </div>
               );
@@ -1800,7 +1800,7 @@ export default function TaskManagementPage() {
               disabled={isDeleting}
               className="w-full sm:w-auto"
             >
-              取消
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -1815,11 +1815,11 @@ export default function TaskManagementPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    删除中...
+                    Delete...
                   </>
                 ) : (
                   <>
-                    删除项目
+                    Delete项目
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m0-6l1 1m0 0l1-1m-6-6h6" />
                     </svg>
@@ -1831,7 +1831,7 @@ export default function TaskManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 移动端菜单对话框 */}
+      {/* Mobile Menu Dialog */}
       <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <DialogContent className="sm:max-w-[300px]">
           <div className="flex items-center justify-between mb-6">
@@ -1847,16 +1847,16 @@ export default function TaskManagementPage() {
           <nav className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
               <Home className="h-4 w-4" />
-              <span>首页</span>
+              <span>Home</span>
             </Link>
             <Link href="/tasks" className="flex items-center gap-3 text-foreground font-medium py-2 px-3 rounded-md bg-primary/10">
               <CheckSquare className="h-4 w-4" />
-              <span>任务管理</span>
+              <span>Manage</span>
             </Link>
             {canAccessScheduler ? (
               <Link href="/analytics" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted">
                 <BarChart2 className="h-4 w-4" />
-                <span>数据分析</span>
+                <span>Analytics</span>
               </Link>
             ) : (
               <button
@@ -1865,26 +1865,26 @@ export default function TaskManagementPage() {
                   if (user && user.email) {
                     localStorage.setItem('pending_purchase', JSON.stringify({
                       planId: 'pro-monthly',
-                      feature: '数据分析',
+                      feature: 'Analytics',
                       timestamp: Date.now(),
                       returnTo: '/analytics'
                     }))
                   }
-                  // 跳转到定价页面
+                  // Go to Pricing
                   window.location.href = '/pricing'
                 }}
                 className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-md hover:bg-muted w-full text-left"
-                title="需要Pro版本"
+                title="需要ProVersion"
               >
                 <BarChart2 className="h-4 w-4" />
-                <span>数据分析</span>
+                <span>Analytics</span>
                 <span className="text-xs">🔒</span>
               </button>
             )}
           </nav>
 
           <div className="border-t border-border mt-6 pt-6">
-            <h3 className="text-sm font-medium mb-3">我的项目</h3>
+            <h3 className="text-sm font-medium mb-3">My Projects</h3>
             <div className="flex flex-col gap-2">
               {projects.map((project) => (
                 <button

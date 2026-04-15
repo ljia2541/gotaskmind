@@ -388,7 +388,7 @@ function ProjectListItem({ project, tasks, isExpanded, onToggle, onEditTask, onV
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="text-right">
               <div className="text-sm font-medium">{completedTasks}/{totalTasks}</div>
-              <div className="text-xs text-muted-foreground">已完成</div>
+              <div className="text-xs text-muted-foreground">Completed</div>
             </div>
 
             {/* 快速统计 */}
@@ -783,7 +783,7 @@ export function PersonalKanbanBoard({
       {/* 整体进度 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">项目看板</h3>
+          <h3 className="text-lg font-semibold">Project Board</h3>
           <span className="text-sm text-muted-foreground">{overallProgress}% 完成</span>
         </div>
         <Progress value={overallProgress} className="h-2" />
@@ -822,27 +822,27 @@ export function PersonalKanbanBoard({
           {selectedTask && (
             <div className="space-y-4 py-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">描述</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
                 <p className="text-sm">{selectedTask.description || '无描述'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">状态</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
                   <Badge variant="secondary">
                     {statusLabels[selectedTask.status]?.label || selectedTask.status}
                   </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">分类</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
                   <Badge variant="outline">
                     {categoryLabels[selectedTask.category]?.label || selectedTask.category}
                   </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">优先级</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Priority</h3>
                   <Badge
                     variant={selectedTask.priority === 'high' ? 'destructive' : selectedTask.priority === 'medium' ? 'default' : 'secondary'}
                     className={
@@ -855,17 +855,17 @@ export function PersonalKanbanBoard({
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">截止日期</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Due Date</h3>
                   <p>{selectedTask.dueDate ? new Date(selectedTask.dueDate).toLocaleDateString('zh-CN') : '无'}</p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">预估时间</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Estimated Time</h3>
                   <p>{selectedTask.estimatedHours ? `${selectedTask.estimatedHours} 小时` : '未设置'}</p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">能量级别</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Energy Level</h3>
                   <div className="flex items-center gap-1">
                     <span>
                       {selectedTask.energyLevel === 'high' ? '⚡ 高能量' :
@@ -877,7 +877,7 @@ export function PersonalKanbanBoard({
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">创建时间</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Created</h3>
                 <p className="text-sm">{new Date(selectedTask.createdAt).toLocaleDateString('zh-CN')}</p>
               </div>
 

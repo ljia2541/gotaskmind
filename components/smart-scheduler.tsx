@@ -112,8 +112,8 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
           <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-sm">工作时区设置</h3>
-                <p className="text-xs text-muted-foreground">任务时间安排将基于您选择的时区</p>
+                <h3 className="font-medium text-sm">Work Timezone Settings</h3>
+                <p className="text-xs text-muted-foreground">Task scheduling will be based on your selected timezone</p>
               </div>
               <TimeZoneSelector
                 variant="compact"
@@ -129,21 +129,21 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <div className="text-sm text-muted-foreground">待安排任务</div>
+              <div className="text-sm text-muted-foreground">Tasks to Schedule</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{stats.scheduled}</div>
-              <div className="text-sm text-muted-foreground">已安排时间</div>
+              <div className="text-sm text-muted-foreground">Scheduled Time</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-amber-600">{stats.unscheduled}</div>
-              <div className="text-sm text-muted-foreground">待安排时间</div>
+              <div className="text-sm text-muted-foreground">Time to Schedule</div>
             </div>
           </div>
 
           {stats.total > 0 && (
             <div className="mb-4">
-              <Label>安排进度</Label>
+              <Label>Schedule Progress</Label>
               <Progress
                 value={stats.total > 0 ? (stats.scheduled / stats.total) * 100 : 0}
                 className="mt-2 h-2"
@@ -197,7 +197,7 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
           {/* 日期范围选择 */}
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="startDate">开始日期</Label>
+              <Label htmlFor="startDate">Start Date</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -206,7 +206,7 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
               />
             </div>
             <div>
-              <Label htmlFor="endDate">结束日期</Label>
+              <Label htmlFor="endDate">End Date</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -248,7 +248,7 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
       <Dialog open={showPreferences} onOpenChange={setShowPreferences}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>工作偏好设置</DialogTitle>
+            <DialogTitle>Work Preferences</DialogTitle>
           </DialogHeader>
 
           {preferences && (
@@ -265,7 +265,7 @@ export function SmartScheduler({ tasks, onTasksUpdate }: SmartSchedulerProps) {
       <Dialog open={showResults} onOpenChange={setShowResults}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>智能安排完成</DialogTitle>
+            <DialogTitle>Smart Schedule Complete</DialogTitle>
           </DialogHeader>
 
           {schedulingResults && (
@@ -403,14 +403,14 @@ function WorkPreferencesForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="general">基本设置</TabsTrigger>
-          <TabsTrigger value="schedule">时间安排</TabsTrigger>
-          <TabsTrigger value="energy">能量管理</TabsTrigger>
+          <TabsTrigger value="general">Basic Settings</TabsTrigger>
+          <TabsTrigger value="schedule">Scheduling</TabsTrigger>
+          <TabsTrigger value="energy">Energy Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
           <div>
-            <Label>工作日</Label>
+            <Label>Workdays</Label>
             <div className="grid grid-cols-4 gap-2 mt-2">
               {workDaysOptions.map(option => (
                 <div key={option.value} className="flex items-center space-x-2">
@@ -429,7 +429,7 @@ function WorkPreferencesForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="workStart">工作开始时间</Label>
+              <Label htmlFor="workStart">Work Start Time</Label>
               <Input
                 id="workStart"
                 type="time"
@@ -441,7 +441,7 @@ function WorkPreferencesForm({
               />
             </div>
             <div>
-              <Label htmlFor="workEnd">工作结束时间</Label>
+              <Label htmlFor="workEnd">Work End Time</Label>
               <Input
                 id="workEnd"
                 type="time"
@@ -455,7 +455,7 @@ function WorkPreferencesForm({
           </div>
 
           <div>
-            <Label htmlFor="maxTasks">每日最大任务数</Label>
+            <Label htmlFor="maxTasks">Max Tasks Per Day</Label>
             <Input
               id="maxTasks"
               type="number"
@@ -472,7 +472,7 @@ function WorkPreferencesForm({
 
         <TabsContent value="schedule" className="space-y-4">
           <div>
-            <Label>午休时间</Label>
+            <Label>Lunch Break</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <Input
                 type="time"
@@ -498,7 +498,7 @@ function WorkPreferencesForm({
           </div>
 
           <div>
-            <Label>高效时段</Label>
+            <Label>Peak Hours</Label>
             <div className="space-y-2 mt-2">
               {formData.peakEnergyHours.map((hour, index) => (
                 <div key={index} className="grid grid-cols-2 gap-2">

@@ -577,23 +577,23 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
         <div className="mt-4 flex flex-wrap gap-4 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-50 border border-red-200 rounded"></div>
-            <span>高优先级任务</span>
+            <span>High Priority Tasks</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-amber-50 border border-amber-200 rounded"></div>
-            <span>中优先级任务</span>
+            <span>Medium Priority Tasks</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
-            <span>低优先级任务</span>
+            <span>Low Priority Tasks</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
-            <span>不可用时间</span>
+            <span>Unavailable Time</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
-            <span>其他事件</span>
+            <span>Other Events</span>
           </div>
         </div>
       </CardContent>
@@ -602,7 +602,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
       <Dialog open={!!showTaskDetail} onOpenChange={() => setShowTaskDetail(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>任务详情</DialogTitle>
+            <DialogTitle>Task Details</DialogTitle>
           </DialogHeader>
 
           {showTaskDetail && (
@@ -711,7 +711,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
       <Dialog open={!!showEventDetail} onOpenChange={() => setShowEventDetail(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>事件详情</DialogTitle>
+            <DialogTitle>Event Details</DialogTitle>
           </DialogHeader>
 
           {showEventDetail && (
@@ -782,7 +782,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
       <Dialog open={!!showDeleteConfirm} onOpenChange={() => setShowDeleteConfirm(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>
 
           {showDeleteConfirm && (
@@ -826,12 +826,12 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
       <Dialog open={!!showEditEvent} onOpenChange={() => setShowEditEvent(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>编辑事件</DialogTitle>
+            <DialogTitle>Edit Event</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={(e) => { e.preventDefault(); handleSaveEventEdit(); }} className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="event-title">事件标题</Label>
+              <Label htmlFor="event-title">Event Title</Label>
               <Input
                 id="event-title"
                 value={eventFormData.title}
@@ -841,7 +841,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="event-description">事件描述</Label>
+              <Label htmlFor="event-description">Event Description</Label>
               <Textarea
                 id="event-description"
                 value={eventFormData.description}
@@ -852,7 +852,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="event-start-time">开始时间</Label>
+                <Label htmlFor="event-start-time">Start Time</Label>
                 <Input
                   id="event-start-time"
                   type="datetime-local"
@@ -863,7 +863,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="event-end-time">结束时间</Label>
+                <Label htmlFor="event-end-time">End Time</Label>
                 <Input
                   id="event-end-time"
                   type="datetime-local"
@@ -874,7 +874,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="event-type">事件类型</Label>
+                <Label htmlFor="event-type">Event Type</Label>
                 <Select
                   value={eventFormData.type}
                   onValueChange={(value) => setEventFormData(prev => ({ ...prev, type: value as CalendarEvent['type'] }))}
@@ -883,10 +883,10 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     <SelectValue placeholder="选择事件类型" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="meeting">会议</SelectItem>
-                    <SelectItem value="personal">个人</SelectItem>
-                    <SelectItem value="work">工作</SelectItem>
-                    <SelectItem value="other">其他</SelectItem>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    <SelectItem value="work">Work</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -952,7 +952,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                 /* 添加事件表单 */
                 <form onSubmit={(e) => { e.preventDefault(); handleAddEvent(); }} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="add-event-title">事件标题</Label>
+                    <Label htmlFor="add-event-title">Event Title</Label>
                     <Input
                       id="add-event-title"
                       value={eventFormData.title}
@@ -963,7 +963,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="add-event-description">事件描述</Label>
+                    <Label htmlFor="add-event-description">Event Description</Label>
                     <Textarea
                       id="add-event-description"
                       value={eventFormData.description}
@@ -975,7 +975,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="add-event-start-time">开始时间</Label>
+                      <Label htmlFor="add-event-start-time">Start Time</Label>
                       <Input
                         id="add-event-start-time"
                         type="datetime-local"
@@ -986,7 +986,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="add-event-end-time">结束时间</Label>
+                      <Label htmlFor="add-event-end-time">End Time</Label>
                       <Input
                         id="add-event-end-time"
                         type="datetime-local"
@@ -997,7 +997,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="add-event-type">事件类型</Label>
+                      <Label htmlFor="add-event-type">Event Type</Label>
                       <Select
                         value={eventFormData.type}
                         onValueChange={(value) => setEventFormData(prev => ({ ...prev, type: value as CalendarEvent['type'] }))}
@@ -1006,10 +1006,10 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                           <SelectValue placeholder="选择事件类型" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="meeting">会议</SelectItem>
-                          <SelectItem value="personal">个人</SelectItem>
-                          <SelectItem value="work">工作</SelectItem>
-                          <SelectItem value="other">其他</SelectItem>
+                          <SelectItem value="meeting">Meeting</SelectItem>
+                          <SelectItem value="personal">Personal</SelectItem>
+                          <SelectItem value="work">Work</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1043,7 +1043,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                 /* 添加任务表单 */
                 <form onSubmit={(e) => { e.preventDefault(); handleAddTask(); }} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="add-task-title">任务标题</Label>
+                    <Label htmlFor="add-task-title">Task Title</Label>
                     <Input
                       id="add-task-title"
                       value={taskFormData.title}
@@ -1054,7 +1054,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="add-task-description">任务描述</Label>
+                    <Label htmlFor="add-task-description">Task Description</Label>
                     <Textarea
                       id="add-task-description"
                       value={taskFormData.description}
@@ -1066,7 +1066,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="add-task-start-time">开始时间</Label>
+                      <Label htmlFor="add-task-start-time">Start Time</Label>
                       <Input
                         id="add-task-start-time"
                         type="datetime-local"
@@ -1077,7 +1077,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="add-task-end-time">结束时间</Label>
+                      <Label htmlFor="add-task-end-time">End Time</Label>
                       <Input
                         id="add-task-end-time"
                         type="datetime-local"
@@ -1088,7 +1088,7 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="add-task-category">分类</Label>
+                      <Label htmlFor="add-task-category">Category</Label>
                       <Select
                         value={taskFormData.category}
                         onValueChange={(value) => setTaskFormData(prev => ({ ...prev, category: value as Task['category'] }))}
@@ -1097,16 +1097,16 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                           <SelectValue placeholder="选择分类" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="work">工作</SelectItem>
-                          <SelectItem value="personal">个人</SelectItem>
-                          <SelectItem value="learning">学习</SelectItem>
-                          <SelectItem value="other">其他</SelectItem>
+                          <SelectItem value="work">Work</SelectItem>
+                          <SelectItem value="personal">Personal</SelectItem>
+                          <SelectItem value="learning">Study</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="add-task-priority">优先级</Label>
+                      <Label htmlFor="add-task-priority">Priority</Label>
                       <Select
                         value={taskFormData.priority}
                         onValueChange={(value) => setTaskFormData(prev => ({ ...prev, priority: value as Task['priority'] }))}
@@ -1115,9 +1115,9 @@ export function TimelineCalendar({ tasks, currentDate = new Date(), onTaskUpdate
                           <SelectValue placeholder="选择优先级" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">低</SelectItem>
-                          <SelectItem value="medium">中</SelectItem>
-                          <SelectItem value="high">高</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -39,12 +39,12 @@ export function AuthNavigation() {
 
   // 服务端渲染时始终使用默认语言(中文)，避免Hydration不匹配
   // 在客户端组件中，可以在useEffect中更新语言
-  const [userLanguage, setUserLanguage] = useState('zh');
-  const [translations, setTranslations] = useState(analyticsTranslations['zh']);
+  const [userLanguage, setUserLanguage] = useState('en');
+  const [translations, setTranslations] = useState(analyticsTranslations['en']);
   
   // 在客户端加载后更新语言偏好
   useEffect(() => {
-    const clientLanguage = LanguageService.getUserLanguage() || 'zh';
+    const clientLanguage = LanguageService.getUserLanguage() || 'en';
     setUserLanguage(clientLanguage);
     setTranslations(analyticsTranslations[clientLanguage]);
   }, [])

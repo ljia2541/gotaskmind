@@ -730,7 +730,7 @@ export default function LandingPage() {
       <Dialog open={showTaskPreview} onOpenChange={setShowTaskPreview}>
         <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>任务预览</DialogTitle>
+            <DialogTitle>Task Preview</DialogTitle>
           </DialogHeader>
           
           <div className="flex items-center justify-between px-1 py-2 mb-2">
