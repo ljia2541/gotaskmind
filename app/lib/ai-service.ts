@@ -8,8 +8,8 @@ export class AIService {
   
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.baseUrl = 'https://api.groq.com/openai/v1';
-    this.model = 'llama-3.3-70b-versatile';
+    this.baseUrl = 'https://api.siliconflow.cn/v1';
+    this.model = 'Qwen/Qwen2.5-72B-Instruct';
   }
 
   /**
@@ -150,9 +150,9 @@ ${containsChinese ? '重要注意事项' : 'Important Notes'}：
  */
 export function createAIService(): AIService {
   // 从环境变量获取API密钥（不使用NEXT_PUBLIC_前缀以保护安全）
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.SILICONFLOW_API_KEY;
   if (!apiKey) {
-    throw new Error('Groq API密钥未配置');
+    throw new Error('SiliconFlow API密钥未配置');
   }
   return new AIService(apiKey);
 }

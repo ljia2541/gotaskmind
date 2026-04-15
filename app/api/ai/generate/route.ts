@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 3. 获取DeepSeek API密钥
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.SILICONFLOW_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
         { error: 'AI服务配置未完成，请联系管理员' },
