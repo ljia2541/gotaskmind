@@ -25,9 +25,9 @@ export default function LoginPage() {
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">登录 GoTaskMind</CardTitle>
+          <CardTitle className="text-2xl text-center">Login to GoTaskMind</CardTitle>
           <CardDescription className="text-center">
-            选择您的登录方式，开始智能任务管理
+            Choose your login method to start smart task management
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -36,7 +36,7 @@ export default function LoginPage() {
             onClick={login}
           >
             <Mail className="mr-2 h-4 w-4" />
-            使用 Google 邮箱登录
+            Sign in with Google
           </Button>
           <Button
             variant="outline"
@@ -44,17 +44,17 @@ export default function LoginPage() {
             onClick={loginWithGitHub}
           >
             <Github className="mr-2 h-4 w-4" />
-            使用 GitHub 账号登录
+            Sign in with GitHub
           </Button>
           <Separator className="my-4" />
           <p className="text-sm text-muted-foreground text-center">
-            登录即表示您同意我们的
+            By logging in, you agree to our
             <a href="/terms" className="text-primary hover:underline mx-1">
-              服务条款
+              Terms of Service
             </a>
-            和
+            and
             <a href="/privacy" className="text-primary hover:underline mx-1">
-              隐私政策
+              Privacy Policy
             </a>
           </p>
         </CardContent>
