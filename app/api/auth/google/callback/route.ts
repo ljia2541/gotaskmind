@@ -77,10 +77,8 @@ export async function GET(request: Request) {
         hasSession: !!data.session
       });
 
-      // 构建正确的重定向URL - 开发环境强制使用localhost:3000
-      const baseUrl = process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000'
-        : (process.env.NEXT_PUBLIC_SITE_URL || origin);
+      // 构建正确的重定向URL
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gotaskmind.com';
       const redirectUrl = `${baseUrl}${next}`;
 
       console.log('重定向到:', redirectUrl);

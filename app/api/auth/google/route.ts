@@ -11,10 +11,8 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    // 配置回调URL - 开发环境强制使用localhost:3000
-    const baseUrl = process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gotaskmind.com');
+    // 配置回调URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gotaskmind.com';
     const redirectTo = `${baseUrl}/api/auth/google/callback`;
 
     console.log('Google登录 - 配置信息:', {
