@@ -1,17 +1,15 @@
 /**
- * AI服务类，用于处理与DeepSeek API的通信
+ * AI服务类，用于处理与Groq API的通信（OpenAI兼容接口）
  */
 export class AIService {
   private apiKey: string;
   private baseUrl: string;
+  private model: string;
   
-  /**
-   * 构造函数
-   * @param apiKey DeepSeek API密钥
-   */
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.baseUrl = 'https://api.deepseek.com/v1';
+    this.baseUrl = 'https://api.groq.com/openai/v1';
+    this.model = 'llama-3.3-70b-versatile';
   }
 
   /**
@@ -51,7 +49,7 @@ export class AIService {
     const prompt = this.getTaskBreakdownPrompt(projectDescription);
     
     const data = {
-      model: 'deepseek-chat', // 使用DeepSeek聊天模型
+      model: this.model,
       messages: [
         {
           role: 'system',
@@ -125,7 +123,7 @@ ${containsChinese ? '重要注意事项' : 'Important Notes'}：
    */
   async analyzeProject(projectData: any): Promise<string> {
     const data = {
-      model: 'deepseek-chat',
+      model: this.model,
       messages: [
         {
           role: 'system',
@@ -152,9 +150,9 @@ ${containsChinese ? '重要注意事项' : 'Important Notes'}：
  */
 export function createAIService(): AIService {
   // 从环境变量获取API密钥（不使用NEXT_PUBLIC_前缀以保护安全）
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error('DeepSeek API密钥未配置');
+    throw new Error('Groq API密钥未配置');
   }
   return new AIService(apiKey);
 }
