@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /settings/
+Disallow: /payment/
+
+Sitemap: https://gotaskmind.com/sitemap.xml

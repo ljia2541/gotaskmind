@@ -10,10 +10,10 @@ import { NotificationBanner } from "@/components/ui/notification-banner"
 import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
-  title: 'GoTaskMind - AI-Powered Project Management Platform',
-  description: 'Transform your ideas into actionable plans with AI-powered project management. Perfect for teams and professionals.',
+  title: 'GoTaskMind - AI Project Planning & Task Management',
+  description: 'Transform project ideas into actionable task plans with AI. Break down complex projects, get smart scheduling, and boost productivity. Free to start.',
   generator: 'v0.app',
-  keywords: ['AI project management', 'task planning', 'project management tool', 'intelligent planning', 'team collaboration'],
+  keywords: ['AI project planning', 'task management tool', 'AI task generator', 'project planning software', 'smart task breakdown', 'productivity tools'],
   openGraph: {
     title: 'GoTaskMind - AI-Powered Project Management Platform',
     description: 'Transform your ideas into actionable plans with AI-powered project management. Perfect for teams and professionals.',
@@ -28,7 +28,7 @@ export default function RootLayout({
 }>)
 {
   return (
-    <html className="" lang="zh-CN" suppressHydrationWarning>
+    <html className="" lang="en" suppressHydrationWarning>
       {/* Google Analytics */}
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-8LLRSPYZGL" />
       <script dangerouslySetInnerHTML={{
