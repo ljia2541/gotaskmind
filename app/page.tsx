@@ -867,6 +867,14 @@ export default function LandingPage() {
                 >
                   Contact
                 </Link>
+                <a
+                  href="https://www.finegrainimageenhancer.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  FineGrain — AI Image Enhancer
+                </a>
               </div>
               <p>
                 © 2025 GoTaskMind. Focus on creation, and let AI handle the planning.
