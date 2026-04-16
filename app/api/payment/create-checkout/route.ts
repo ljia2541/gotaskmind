@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // 获取基础URL用于回调 - 确保开发环境使用localhost
     const baseUrl = process.env.NODE_ENV === 'production'
       ? (process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'https://www.gotaskmind.com')
-      : 'http://localhost:3000'
+      : 'https://www.gotaskmind.com'
 
     console.log('Creem配置检查:', {
       hasApiKey: !!CREEM_API_KEY,
