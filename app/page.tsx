@@ -15,13 +15,23 @@ import { useAuth } from "@/app/hooks/use-auth"
 import { LanguageService, analyticsTranslations } from "@/app/lib/language-service"
 
 const examplePrompts = [
+  // Software Development
   "Build a fitness tracking mobile app with social features",
-  "Organize a cross-regional industry summit conference",
-  "Develop a multilingual e-commerce application",
-  "Create an internal customer relationship management system",
-  "Launch a SaaS product with subscription billing",
-  "Design and implement company website redesign project",
-]
+  "Develop a multilingual e-commerce application in 3 months",
+  "Launch a SaaS product with subscription billing and Stripe",
+  "Create a startup landing page with waitlist and email capture",
+  // Content & Marketing
+  "Plan a 12-episode YouTube series on personal finance",
+  "Organize a product launch campaign across 5 social platforms",
+  "Create a monthly editorial calendar for a tech blog",
+  // Project Management
+  "Organize a cross-regional industry summit in 6 months",
+  "Plan a company rebranding project with 3 teams",
+  // Research & Academic
+  "Write and publish a research paper within 3 months",
+  // General
+  "Plan a destination wedding in Italy with 50 guests",
+];
 
 export default function LandingPage() {
   const { loginWithGoogle, isAuthenticated, isPro, subscription, user, debugSubscriptionStatus, manualActivatePro, useMemoryStore, updateSubscription } = useAuth()
@@ -303,7 +313,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center gap-4 mb-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm animate-in fade-in slide-in-from-bottom-3 duration-500">
                 <Sparkles className="w-4 h-4" />
-                <span>AI-Powered Project Planning</span>
+                <span>AI Task Generation in Seconds</span>
               </div>
 
               {isAuthenticated && (
@@ -325,10 +335,10 @@ export default function LandingPage() {
               )}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 text-balance leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
-              Transform Ideas into Actionable Plans
+              Describe Your Project. Get a Task List. Done.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 md:mb-12 text-pretty max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-900">
-              An AI-powered project management tool that helps you organize tasks and create structured plans from natural language descriptions.
+              Tell AI what you want to build. Get instant task breakdowns with priorities, time estimates, and dependencies. Free, no signup needed.
             </p>
 
             {/* AI Input Demo */}
