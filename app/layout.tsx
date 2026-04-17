@@ -31,6 +31,8 @@ export const metadata: Metadata = {
     'productivity tools', 'AI productivity assistant', 'work planning AI tool',
     'project management AI assistant', 'task management AI free',
     'AI project timeline generator', 'AI kanban board',
+    // Brand / direct search
+    'GoTaskMind', 'gotaskmind', 'gotask', 'taskmind',
     // High intent
     'free AI task generator', 'best free project planning tool',
     'how to break down a project into tasks', 'AI project planning tools 2026',
