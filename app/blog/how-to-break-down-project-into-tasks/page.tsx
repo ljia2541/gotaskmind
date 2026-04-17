@@ -2,8 +2,32 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'How to Break Down a Project into Tasks - AI & Manual Methods',
-  description: 'Learn proven methods to break down any project into manageable tasks. Compare manual work breakdown structure (WBS) with AI-powered task generation. Free AI task generator included.',
-  keywords: ['break down project into tasks', 'project task breakdown', 'work breakdown structure', 'AI task breakdown', 'how to create task list from project', 'project planning steps', 'AI generate tasks from description'],
+  description: 'Learn proven methods to break down any project into manageable tasks. Compare manual work breakdown structure (WBS) with AI-powered task generation. Includes free AI task generator.',
+  keywords: [
+    'break down project into tasks',
+    'project task breakdown',
+    'how to break down a project into tasks',
+    'work breakdown structure',
+    'project planning steps',
+    'task breakdown structure',
+    'how to create task list from project',
+    'project planning process',
+    'AI task breakdown',
+    'AI generate tasks from description',
+    'how to split a project into tasks',
+    'task list generator from project',
+    'describe project get task list',
+    'WBS project management',
+    'AI work breakdown structure',
+    'free task breakdown tool',
+    'how to plan a project step by step',
+    'task decomposition methods',
+    'project management task breakdown',
+    'AI powered task planning',
+  ],
+  alternates: {
+    canonical: 'https://www.gotaskmind.com/blog/how-to-break-down-project-into-tasks',
+  },
 }
 
 export default function HowToBreakDownProject() {

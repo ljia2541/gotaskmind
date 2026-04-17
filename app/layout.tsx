@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     'describe project get task list', 'natural language task planning',
     'AI powered task management free', 'project planning for developers free',
   ],
-  metadataBase: new URL('https://gotaskmind.com'),
+  metadataBase: new URL('https://www.gotaskmind.com'),
   openGraph: {
     title: 'GoTaskMind - Free AI Project Planner & Task Management',
     description: 'Transform ideas into actionable plans with AI. Describe your project and get structured task breakdowns instantly. Free to start, no signup required.',

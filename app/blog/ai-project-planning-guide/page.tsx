@@ -3,7 +3,31 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Complete Guide to AI Project Planning in 2026 - Tools, Tips & Best Practices',
   description: 'Learn how AI project planning works, the best tools available, and how to use AI to break down projects into actionable tasks. Step-by-step guide for developers, content creators, and project managers.',
-  keywords: ['AI project planning', 'AI project planning guide', 'how to use AI for project planning', 'AI project management tutorial', 'AI task planning best practices', 'AI project planning tools 2026'],
+  keywords: [
+    'AI project planning',
+    'AI project planning guide',
+    'AI project planning 2026',
+    'AI project planning tools',
+    'how to use AI for project planning',
+    'AI project management tutorial',
+    'AI task planning best practices',
+    'AI project planning for developers',
+    'AI project planning for content creators',
+    'AI task generator',
+    'break down project into tasks',
+    'project planning steps',
+    'AI sprint planning',
+    'AI backlog management',
+    'story points generator',
+    'automated task creation',
+    'AI productivity assistant',
+    'how to plan a project with AI',
+    'AI work breakdown structure',
+    'best AI project planning tools',
+  ],
+  alternates: {
+    canonical: 'https://www.gotaskmind.com/blog/ai-project-planning-guide',
+  },
 }
 
 export default function AIProjectPlanningGuide() {
