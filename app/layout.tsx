@@ -10,49 +10,43 @@ import { NotificationBanner } from "@/components/ui/notification-banner"
 import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
-  title: 'GoTaskMind - Free AI Project Planner & Task Management Tool',
-  description: 'Free AI task generator. Describe your project in plain English and get instant structured task breakdowns with priorities, dependencies, and time estimates. No signup required.',
-  generator: 'v0.app',
+  title: 'GoTaskMind - Free AI Mind Map Generator | Instant Visual Brainstorming',
+  description: 'Generate beautiful mind maps instantly with AI. Enter any topic and get a structured visual mind map in seconds. Free, no signup required. Export as PNG or SVG.',
   keywords: [
-    // Core AI task generation
-    'AI project planning', 'AI task generator', 'AI task planner', 'AI task breakdown',
-    'AI project management', 'automated task creation', 'AI task list generator',
-    // Developer-focused
-    'AI sprint planning tool', 'software project planning AI', 'story points generator AI',
-    'developer productivity tools', 'AI backlog management', 'scrum planning AI',
-    'break down project into tasks AI', 'AI work breakdown structure',
-    // Content creator
-    'content calendar AI planner', 'editorial calendar AI', 'content planning AI',
-    'video production planning AI', 'social media content planner AI',
-    // Academic/research
-    'academic project planner AI', 'thesis planning tool AI', 'research project management AI',
-    // General productivity
-    'task management tool', 'project planning software', 'smart task breakdown',
-    'productivity tools', 'AI productivity assistant', 'work planning AI tool',
-    'project management AI assistant', 'task management AI free',
-    'AI project timeline generator', 'AI kanban board',
-    // Brand / direct search
-    'GoTaskMind', 'gotaskmind', 'gotask', 'taskmind',
+    // Core mind map
+    'AI mind map generator', 'mind map maker', 'mind map generator',
+    'AI mind map', 'online mind map', 'free mind map generator',
+    'mind map creator', 'mind map tool', 'mind mapping tool',
+    // AI-specific
+    'AI mind map maker', 'AI mind mapping', 'AI brainstorming tool',
+    'text to mind map', 'AI concept map generator', 'AI visual thinking',
+    // Use cases
+    'brainstorming tool', 'idea organizer', 'visual brainstorming',
+    'study mind map', 'project planning mind map', 'concept map maker',
+    'flowchart generator', 'diagram generator',
     // High intent
-    'free AI task generator', 'best free project planning tool',
-    'how to break down a project into tasks', 'AI project planning tools 2026',
-    'no signup project planner AI', 'instant task breakdown from description',
+    'free mind map online', 'best free mind map tool',
+    'mind map generator no signup', 'AI mind map free',
+    'instant mind map', 'mind map from text',
     // Long tail
-    'describe project get task list', 'natural language task planning',
-    'AI powered task management free', 'project planning for developers free',
+    'how to create a mind map online', 'AI powered mind map',
+    'free online brainstorming tool', 'mind map for students free',
+    'project planning mind map tool', 'visual thinking tool',
+    // Brand
+    'GoTaskMind', 'gotaskmind',
   ],
   metadataBase: new URL('https://www.gotaskmind.com'),
   openGraph: {
-    title: 'GoTaskMind - Free AI Project Planner & Task Management',
-    description: 'Transform ideas into actionable plans with AI. Describe your project and get structured task breakdowns instantly. Free to start, no signup required.',
+    title: 'GoTaskMind - Free AI Mind Map Generator',
+    description: 'Turn any topic into a beautiful mind map instantly. Free AI-powered mind mapping. No signup needed.',
     type: 'website',
     siteName: 'GoTaskMind',
-    url: 'https://gotaskmind.com',
+    url: 'https://www.gotaskmind.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GoTaskMind - Free AI Project Planner',
-    description: 'AI-powered project planning. Describe your idea, get structured tasks instantly. Free.',
+    title: 'GoTaskMind - Free AI Mind Map Generator',
+    description: 'AI-powered mind mapping. Enter a topic, get a beautiful mind map instantly. Free.',
   },
   robots: {
     index: true,
@@ -91,7 +85,7 @@ export default function RootLayout({
               '@type': 'WebApplication',
               '@id': 'https://gotaskmind.com/#webapp',
               name: 'GoTaskMind',
-              description: 'Free AI project planner that transforms ideas into actionable task plans with structured breakdowns, priorities, and time estimates.',
+              description: 'Free AI mind map generator. Enter any topic and instantly generate a structured visual mind map. No signup required. Export as PNG or SVG.',
               url: 'https://gotaskmind.com',
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',
@@ -118,39 +112,39 @@ export default function RootLayout({
                   name: 'Is GoTaskMind free to use?',
                   acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Yes! GoTaskMind offers a free plan with 3 projects, 10 tasks per project, basic AI task generation, and Kanban view. No signup required to start.',
+                    text: 'Yes! GoTaskMind is completely free. Generate unlimited mind maps without signing up or paying anything.',
                   },
                 },
                 {
                   '@type': 'Question',
-                  name: 'How does AI project planning work?',
+                  name: 'How does AI mind map generation work?',
                   acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Simply describe your project in plain English. GoTaskMind\'s AI analyzes your description and generates a structured task list with priorities, dependencies, and estimated timelines.',
+                    text: 'Simply enter any topic or idea. Our AI analyzes it and generates a structured mind map with logical branches and sub-topics in seconds.',
                   },
                 },
                 {
                   '@type': 'Question',
-                  name: 'What types of projects can I plan with GoTaskMind?',
+                  name: 'Can I export the mind map?',
                   acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'GoTaskMind works for software development, content creation, academic research, event planning, marketing campaigns, and any project that needs structured task breakdown.',
+                    text: 'Yes! Export your mind map as PNG or SVG for free. No watermarks.',
                   },
                 },
                 {
                   '@type': 'Question',
-                  name: 'Do I need to create an account to use GoTaskMind?',
+                  name: 'Do I need an account?',
                   acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'You can try AI task generation without an account. For saving projects, managing tasks, and accessing advanced features, a free account is needed.',
+                    text: 'No account needed. Just enter a topic and generate your mind map instantly.',
                   },
                 },
                 {
                   '@type': 'Question',
-                  name: 'What is the best AI project planning tool?',
+                  name: 'What is the best free AI mind map generator?',
                   acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'GoTaskMind is designed specifically for AI-powered project planning, offering natural language task breakdown, priority suggestions, dependency tracking, and Kanban views — all with a generous free tier.',
+                    text: 'GoTaskMind is a free AI mind map generator that creates beautiful, structured mind maps from any topic instantly. No signup, no watermark, export for free.',
                   },
                 },
               ],

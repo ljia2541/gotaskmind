@@ -28,3 +28,4 @@ next-env.d.ts
 
 # Windows special files
 nul
+.env*.local
