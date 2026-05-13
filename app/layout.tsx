@@ -5,9 +5,6 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Suspense } from "react"
-import { AuthProvider } from "./providers/auth-provider"
-import { NotificationBanner } from "@/components/ui/notification-banner"
-import { NetworkErrorHandler } from "@/app/components/network-error-handler"
 
 export const metadata: Metadata = {
   title: 'GoTaskMind - Free AI Mind Map Generator | Instant Visual Brainstorming',
@@ -154,14 +151,9 @@ export default function RootLayout({
       }} />
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <Suspense fallback={null}>
-          <AuthProvider>
-            <NetworkErrorHandler>
-              {/* <NotificationBanner /> */}
-              <div className="min-h-screen">
-                {children}
-              </div>
-            </NetworkErrorHandler>
-          </AuthProvider>
+          <div className="min-h-screen">
+            {children}
+          </div>
         </Suspense>
         <Analytics />
       </body>

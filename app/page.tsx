@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Download, Loader2, RotateCcw, Expand, ChevronDown } from "lucide-react"
-import { Logo } from "@/components/logo"
+// Logo inline
 
 const exampleTopics = [
   "Marketing strategy for a SaaS startup",
@@ -139,7 +139,7 @@ export default function HomePage() {
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Logo />
+            <span className="text-lg font-bold">🧠 GoTaskMind</span>
             <span className="text-sm text-muted-foreground hidden sm:inline">AI Mind Map Generator</span>
           </div>
           <div className="text-xs text-muted-foreground">
