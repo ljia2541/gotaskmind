@@ -8,6 +8,11 @@ import { MindMapForProjectManagement } from "./articles/mind-map-for-project-man
 import { BenefitsOfMindMapping } from "./articles/benefits-of-mind-mapping"
 import { MindMapExamples } from "./articles/mind-map-examples"
 import { AiBrainstormingTools2026 } from "./articles/ai-brainstorming-tools-2026"
+import { MindMapForBeginners } from "./articles/mind-map-for-beginners"
+import { AiTextToMindMap } from "./articles/ai-text-to-mind-map"
+import { MindMapStudyTechniques } from "./articles/mind-map-study-techniques"
+import { FreeMindMapApps } from "./articles/free-mind-map-apps"
+import { MindMapForEssayWriting } from "./articles/mind-map-for-essay-writing"
 
 const articleComponents: Record<string, React.ComponentType> = {
   "ai-mind-map-generator": AiMindMapGenerator,
@@ -16,6 +21,11 @@ const articleComponents: Record<string, React.ComponentType> = {
   "benefits-of-mind-mapping": BenefitsOfMindMapping,
   "mind-map-examples": MindMapExamples,
   "ai-brainstorming-tools-2026": AiBrainstormingTools2026,
+  "mind-map-for-beginners": MindMapForBeginners,
+  "ai-text-to-mind-map": AiTextToMindMap,
+  "mind-map-study-techniques": MindMapStudyTechniques,
+  "free-mind-map-apps": FreeMindMapApps,
+  "mind-map-for-essay-writing": MindMapForEssayWriting,
 }
 
 export async function generateStaticParams() {
