@@ -3,8 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Sparkles, Download, Loader2, RotateCcw, Expand, ChevronDown } from "lucide-react"
-// Logo inline
+import { Sparkles, Download, Loader2, RotateCcw, Share2, ChevronDown, MousePointerClick, Brain, FileDown } from "lucide-react"
 
 const exampleTopics = [
   "Marketing strategy for a SaaS startup",
@@ -13,6 +12,29 @@ const exampleTopics = [
   "Project management best practices",
   "Healthy lifestyle habits",
   "Web development roadmap 2026",
+]
+
+const faqItems = [
+  {
+    q: "What is GoTaskMind?",
+    a: "GoTaskMind is a free AI-powered mind map generator. Simply enter any topic and instantly get a beautiful, downloadable mind map.",
+  },
+  {
+    q: "Is it really free?",
+    a: "Yes, completely free! No sign-up required, no hidden fees, no usage limits.",
+  },
+  {
+    q: "Can I download the mind map?",
+    a: "Yes! You can export your mind map as PNG (high-resolution) or SVG (vector) with one click.",
+  },
+  {
+    q: "What AI model do you use?",
+    a: "GoTaskMind is powered by advanced AI language models that understand your topic and generate structured, meaningful mind maps.",
+  },
+  {
+    q: "Is my data stored?",
+    a: "No. We don't store your topics or generated maps. Everything runs in real-time and nothing is saved on our servers.",
+  },
 ]
 
 export default function HomePage() {
@@ -24,6 +46,13 @@ export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showExamples, setShowExamples] = useState(false)
   const [history, setHistory] = useState<string[]>([])
+  const [toast, setToast] = useState("")
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(""), 2500)
+  }, [])
 
   const generate = useCallback(async () => {
     if (!topic.trim() || isGenerating) return
@@ -73,11 +102,25 @@ export default function HomePage() {
           const mm = Markmap.create(svgRef.current, {
             autoFit: true,
             color: (node: any) => {
-              const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444']
-              return colors[node.state?.depth % colors.length] || '#6366f1'
+              const depth = node.state?.depth ?? 0
+              // Distinct colors per level
+              const colors = [
+                '#4f46e5', // root - deep indigo
+                '#7c3aed', // level 1 - violet
+                '#0ea5e9', // level 2 - sky blue
+                '#10b981', // level 3 - emerald
+                '#f59e0b', // level 4 - amber
+                '#ef4444', // level 5 - red
+                '#ec4899', // level 6 - pink
+                '#14b8a6', // level 7 - teal
+              ]
+              return colors[depth % colors.length] || '#6366f1'
             },
-            duration: 500,
-            paddingX: 20,
+            duration: 300,
+            paddingX: 24,
+            zoom: true,
+            pan: true,
+            nodeMinHeight: 20,
           }, root)
 
           setTimeout(() => mm.fit(), 100)
@@ -126,6 +169,22 @@ export default function HomePage() {
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
   }, [])
 
+  const shareLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      showToast("Link copied!")
+    } catch {
+      // Fallback
+      const input = document.createElement('input')
+      input.value = window.location.href
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      showToast("Link copied!")
+    }
+  }, [showToast])
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -134,7 +193,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -142,13 +201,15 @@ export default function HomePage() {
             <span className="text-lg font-bold">🧠 GoTaskMind</span>
             <span className="text-sm text-muted-foreground hidden sm:inline">AI Mind Map Generator</span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Free · No Sign-up · Powered by AI
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <a href="#how-it-works" className="hover:text-foreground transition-colors hidden sm:inline">How it works</a>
+            <a href="#faq" className="hover:text-foreground transition-colors hidden sm:inline">FAQ</a>
+            <span>Free · No Sign-up</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
         {/* Input Section */}
         <div className="max-w-3xl mx-auto mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">
@@ -158,26 +219,28 @@ export default function HomePage() {
             Describe any topic and get an instant mind map. Free, no account needed.
           </p>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Textarea
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter a topic... e.g. &quot;Marketing strategy for SaaS startup&quot;"
-              className="resize-none h-20 text-base"
+              className="resize-none h-20 sm:h-20 text-base"
               maxLength={2000}
             />
             <Button
               onClick={generate}
               disabled={isGenerating || !topic.trim()}
-              className="h-20 w-20 shrink-0"
+              className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
               size="lg"
+              title="Generate mind map"
             >
               {isGenerating ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <Sparkles className="h-5 w-5" />
               )}
+              <span className="hidden sm:inline">Generate</span>
             </Button>
           </div>
 
@@ -232,36 +295,45 @@ export default function HomePage() {
         {markdown && (
           <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-              <span className="text-sm font-medium text-muted-foreground">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b bg-muted/30 overflow-x-auto">
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                 Mind Map
               </span>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={exportPNG}>
-                  <Download className="h-4 w-4 mr-1" />
-                  PNG
+              <div className="flex gap-1 sm:gap-2 shrink-0">
+                <Button variant="ghost" size="sm" onClick={exportPNG} className="text-xs sm:text-sm">
+                  <Download className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">PNG</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={exportSVG}>
-                  <Download className="h-4 w-4 mr-1" />
-                  SVG
+                <Button variant="ghost" size="sm" onClick={exportSVG} className="text-xs sm:text-sm">
+                  <Download className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">SVG</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setMarkdown(""); setTopic("") }}>
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Reset
+                <Button variant="ghost" size="sm" onClick={shareLink} className="text-xs sm:text-sm">
+                  <Share2 className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setMarkdown(""); setTopic("") }} className="text-xs sm:text-sm">
+                  <RotateCcw className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Reset</span>
                 </Button>
               </div>
             </div>
 
-            {/* SVG Container */}
-            <div ref={containerRef} className="w-full" style={{ height: '70vh', minHeight: '500px' }}>
-              <svg ref={svgRef} className="w-full h-full" />
+            {/* SVG Container - responsive height */}
+            <div ref={containerRef} className="w-full" style={{ height: '70vh', minHeight: '400px' }}>
+              <style>{`
+                @media (min-width: 640px) {
+                  .mindmap-container { min-height: 500px !important; }
+                }
+              `}</style>
+              <svg ref={svgRef} className="w-full h-full" style={{ textAlign: 'left' }} />
             </div>
           </div>
         )}
 
         {/* Empty state */}
         {!markdown && !isGenerating && (
-          <div className="text-center py-20 text-muted-foreground">
+          <div className="text-center py-16 sm:py-20 text-muted-foreground">
             <div className="text-6xl mb-4">🧠</div>
             <p className="text-lg font-medium">Enter a topic above</p>
             <p className="text-sm mt-1">AI will generate a mind map instantly</p>
@@ -275,11 +347,89 @@ export default function HomePage() {
             <p className="text-muted-foreground">Generating mind map...</p>
           </div>
         )}
+
+        {/* How it Works */}
+        {!markdown && !isGenerating && (
+          <section id="how-it-works" className="max-w-3xl mx-auto mt-12 sm:mt-16 mb-12 sm:mb-16">
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-8">How it works</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="text-center p-6 rounded-xl bg-white border shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                  <MousePointerClick className="h-6 w-6" />
+                </div>
+                <div className="text-sm font-semibold mb-1">1. Enter topic</div>
+                <p className="text-xs text-muted-foreground">Type any topic or idea you want to explore</p>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-white border shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-4">
+                  <Brain className="h-6 w-6" />
+                </div>
+                <div className="text-sm font-semibold mb-1">2. AI generates</div>
+                <p className="text-xs text-muted-foreground">Our AI creates a structured mind map instantly</p>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-white border shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+                  <FileDown className="h-6 w-6" />
+                </div>
+                <div className="text-sm font-semibold mb-1">3. Download & share</div>
+                <p className="text-xs text-muted-foreground">Export as PNG or SVG, or share with a link</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* FAQ */}
+        {!markdown && !isGenerating && (
+          <section id="faq" className="max-w-3xl mx-auto mb-12 sm:mb-16">
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+            <div className="space-y-2">
+              {faqItems.map((item, i) => (
+                <div key={i} className="border rounded-lg bg-white overflow-hidden">
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium hover:bg-muted/30 transition-colors"
+                  >
+                    {item.q}
+                    <ChevronDown className={`h-4 w-4 shrink-0 ml-2 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openFaq === i && (
+                    <div className="px-4 pb-3 text-sm text-muted-foreground">
+                      {item.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-foreground text-background px-4 py-2 rounded-lg text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2">
+          {toast}
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="border-t mt-12 py-6 text-center text-xs text-muted-foreground">
-        <p>GoTaskMind — Free AI Mind Map Generator</p>
+      <footer className="border-t mt-auto py-8 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-bold">🧠 GoTaskMind</span>
+              <span className="text-xs text-muted-foreground">Free AI Mind Map Generator</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
+              <a href="/contact" className="hover:text-foreground transition-colors">Contact</a>
+              <a href="/pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            © {new Date().getFullYear()} GoTaskMind. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   )
