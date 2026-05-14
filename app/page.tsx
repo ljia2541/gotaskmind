@@ -204,6 +204,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <a href="#how-it-works" className="hover:text-foreground transition-colors hidden sm:inline">How it works</a>
             <a href="#faq" className="hover:text-foreground transition-colors hidden sm:inline">FAQ</a>
+            <a href="/blog" className="hover:text-foreground transition-colors hidden sm:inline">Blog</a>
             <span>Free · No Sign-up</span>
           </div>
         </div>
@@ -424,6 +425,7 @@ export default function HomePage() {
               <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
               <a href="/contact" className="hover:text-foreground transition-colors">Contact</a>
               <a href="/pricing" className="hover:text-foreground transition-colors">Pricing</a>
+              <a href="/blog" className="hover:text-foreground transition-colors">Blog</a>
             </div>
           </div>
           <p className="text-center text-xs text-muted-foreground mt-4">
