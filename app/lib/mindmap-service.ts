@@ -1,11 +1,11 @@
 /**
- * AI Mind Map Service - Qwen3.5-4B (Free) via SiliconFlow
+ * AI Mind Map Service - Qwen3-8B (Free) via SiliconFlow
  */
 
 export class MindMapService {
   private apiKey: string;
   private baseUrl = 'https://api.siliconflow.cn/v1';
-  private model = 'Qwen/Qwen3.5-4B';
+  private model = 'Qwen/Qwen3-8B';
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
