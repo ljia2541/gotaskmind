@@ -28,6 +28,7 @@ export class MindMapService {
         ],
         temperature: 0.7,
         max_tokens: 2000,
+        enable_thinking: false,
       }),
     });
 
