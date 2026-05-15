@@ -97,6 +97,38 @@ export const posts: BlogPost[] = [
     date: "2026-05-09",
     readTime: "9 min read",
   },
+  {
+    slug: "xmind-vs-mindmeister",
+    title: "XMind vs MindMeister vs GoTaskMind (2026): Which is Best?",
+    description: "Detailed comparison of XMind, MindMeister, and GoTaskMind. Features, pricing, AI capabilities, and which mind map tool is right for you.",
+    keywords: ["xmind vs mindmeister", "xmind comparison", "mindmeister alternative", "best mind map tool 2026"],
+    date: "2026-05-15",
+    readTime: "8 min read",
+  },
+  {
+    slug: "gitmind-vs-xmind",
+    title: "GitMind vs XMind (2026): Which Mind Map Tool Should You Use?",
+    description: "Comparing GitMind and XMind in 2026. AI features, pricing, collaboration, templates, and free tier limits. Includes a free alternative.",
+    keywords: ["gitmind vs xmind", "gitmind review", "xmind alternative", "ai mind map tool"],
+    date: "2026-05-15",
+    readTime: "7 min read",
+  },
+  {
+    slug: "mindmeister-free-alternatives",
+    title: "5 Free MindMeister Alternatives (No Signup, No Limits) 2026",
+    description: "Tired of MindMeister's 3-map free limit? Discover 5 better free alternatives including GoTaskMind, Coggle, Draw.io, and more.",
+    keywords: ["mindmeister free alternative", "free mind map tool", "mindmeister alternative no signup", "free mind mapping software"],
+    date: "2026-05-15",
+    readTime: "7 min read",
+  },
+  {
+    slug: "reddit-best-free-mind-map-tools",
+    title: "Reddit's Top 5 Free Mind Map Tools (2026): What Real Users Recommend",
+    description: "We analyzed hundreds of Reddit threads to find the best free mind map tools in 2026. Here's what real users actually recommend and why.",
+    keywords: ["best free mind map tool reddit", "reddit mind map recommendation", "free mind map app", "mind mapping tool reddit"],
+    date: "2026-05-15",
+    readTime: "8 min read",
+  },
 ]
 
 export function getPostBySlug(slug: string): BlogPost | undefined {

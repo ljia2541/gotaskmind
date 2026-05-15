@@ -13,6 +13,10 @@ import { AiTextToMindMap } from "./articles/ai-text-to-mind-map"
 import { MindMapStudyTechniques } from "./articles/mind-map-study-techniques"
 import { FreeMindMapApps } from "./articles/free-mind-map-apps"
 import { MindMapForEssayWriting } from "./articles/mind-map-for-essay-writing"
+import { XmindVsMindmeister } from "./articles/xmind-vs-mindmeister"
+import { GitmindVsXmind } from "./articles/gitmind-vs-xmind"
+import { MindmeisterFreeAlternatives } from "./articles/mindmeister-free-alternatives"
+import { RedditBestFreeMindMapTools } from "./articles/reddit-best-free-mind-map-tools"
 
 const articleComponents: Record<string, React.ComponentType> = {
   "ai-mind-map-generator": AiMindMapGenerator,
@@ -26,6 +30,10 @@ const articleComponents: Record<string, React.ComponentType> = {
   "mind-map-study-techniques": MindMapStudyTechniques,
   "free-mind-map-apps": FreeMindMapApps,
   "mind-map-for-essay-writing": MindMapForEssayWriting,
+  "xmind-vs-mindmeister": XmindVsMindmeister,
+  "gitmind-vs-xmind": GitmindVsXmind,
+  "mindmeister-free-alternatives": MindmeisterFreeAlternatives,
+  "reddit-best-free-mind-map-tools": RedditBestFreeMindMapTools,
 }
 
 export async function generateStaticParams() {
