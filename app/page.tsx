@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Sparkles, Download, Loader2, RotateCcw, Share2, ChevronDown, MousePointerClick, Brain, FileDown } from "lucide-react"
+import { Sparkles, Download, Loader2, RotateCcw, Share2, ChevronDown, MousePointerClick, Brain, FileDown, Image as ImageIcon, Upload } from "lucide-react"
 
 const exampleTopics = [
   "Marketing strategy for a SaaS startup",
@@ -42,6 +42,10 @@ export default function HomePage() {
   const [markdown, setMarkdown] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState("")
+  const [selectedMode, setSelectedMode] = useState<'text' | 'image'>('text')
+  const [imageUrl, setImageUrl] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [showExamples, setShowExamples] = useState(false)
@@ -55,27 +59,53 @@ export default function HomePage() {
   }, [])
 
   const generate = useCallback(async () => {
-    if (!topic.trim() || isGenerating) return
+    if (isGenerating || isAnalyzing) return
+
+    // Image mode
+    if (selectedMode === 'image') {
+      if (!imageUrl.trim()) return
+      setIsAnalyzing(true)
+      setError('')
+      setMarkdown('')
+      try {
+        const res = await fetch('/api/analyze-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: imageUrl.trim() }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Analysis failed')
+        setMarkdown(data.markdown)
+      } catch (err: any) {
+        setError(err.message || 'Something went wrong')
+      } finally {
+        setIsAnalyzing(false)
+      }
+      return
+    }
+
+    // Text mode
+    if (!topic.trim()) return
     setIsGenerating(true)
-    setError("")
-    setMarkdown("")
+    setError('')
+    setMarkdown('')
 
     try {
-      const res = await fetch("/api/generate-mindmap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/generate-mindmap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: topic.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Generation failed")
+      if (!res.ok) throw new Error(data.error || 'Generation failed')
       setMarkdown(data.markdown)
       setHistory(prev => [topic.trim(), ...prev.filter(t => t !== topic.trim())].slice(0, 10))
     } catch (err: any) {
-      setError(err.message || "Something went wrong")
+      setError(err.message || 'Something went wrong')
     } finally {
       setIsGenerating(false)
     }
-  }, [topic, isGenerating])
+  }, [topic, isGenerating, isAnalyzing, selectedMode, imageUrl])
 
   // Render mind map using markmap
   useEffect(() => {
@@ -220,30 +250,80 @@ export default function HomePage() {
             Describe any topic and get an instant mind map. Free, no account needed.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Textarea
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter a topic... e.g. &quot;Marketing strategy for SaaS startup&quot;"
-              className="resize-none h-20 sm:h-20 text-base"
-              maxLength={2000}
-            />
-            <Button
-              onClick={generate}
-              disabled={isGenerating || !topic.trim()}
-              className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
-              size="lg"
-              title="Generate mind map"
+          {/* Mode switcher */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setSelectedMode('text')}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                selectedMode === 'text' ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-muted'
+              }`}
             >
-              {isGenerating ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Sparkles className="h-5 w-5" />
-              )}
-              <span className="hidden sm:inline">Generate</span>
-            </Button>
+              <Sparkles className="h-3.5 w-3.5" />
+              Text
+            </button>
+            <button
+              onClick={() => setSelectedMode('image')}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                selectedMode === 'image' ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-muted'
+              }`}
+            >
+              <ImageIcon className="h-3.5 w-3.5" />
+              From Photo
+            </button>
           </div>
+
+          {selectedMode === 'image' ? (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Paste image URL..."
+                  className="w-full h-20 pl-10 pr-4 py-3 text-base border rounded-lg bg-white resize-none"
+                />
+              </div>
+              <Button
+                onClick={generate}
+                disabled={isAnalyzing || !imageUrl.trim()}
+                className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
+                size="lg"
+              >
+                {isAnalyzing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-5 w-5" />
+                )}
+                <span className="hidden sm:inline">Analyze</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Textarea
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter a topic... e.g. &quot;Marketing strategy for SaaS startup&quot;"
+                className="resize-none h-20 sm:h-20 text-base"
+                maxLength={2000}
+              />
+              <Button
+                onClick={generate}
+                disabled={isGenerating || !topic.trim()}
+                className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
+                size="lg"
+                title="Generate mind map"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-5 w-5" />
+                )}
+                <span className="hidden sm:inline">Generate</span>
+              </Button>
+            </div>
+          )}
 
           {/* Example topics */}
           <div className="mt-3">
