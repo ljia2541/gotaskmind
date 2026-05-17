@@ -17,6 +17,12 @@ export const metadata: Metadata = {
     // AI-specific
     'AI mind map maker', 'AI mind mapping', 'AI brainstorming tool',
     'text to mind map', 'AI concept map generator', 'AI visual thinking',
+    // From photo / image
+    'AI mind map from photo', 'image to mind map', 'photo to mind map',
+    'mind map from image', 'AI mind map generator from photo',
+    'convert image to mind map', 'screenshot to mind map',
+    'AI mind map from picture', 'picture to mind map generator',
+    'mind map from screenshot', 'image to mindmap AI',
     // Use cases
     'brainstorming tool', 'idea organizer', 'visual brainstorming',
     'study mind map', 'project planning mind map', 'concept map maker',
@@ -29,6 +35,7 @@ export const metadata: Metadata = {
     'how to create a mind map online', 'AI powered mind map',
     'free online brainstorming tool', 'mind map for students free',
     'project planning mind map tool', 'visual thinking tool',
+    'mind map from photo free', 'AI image to mind map free',
     // Brand
     'GoTaskMind', 'gotaskmind',
   ],

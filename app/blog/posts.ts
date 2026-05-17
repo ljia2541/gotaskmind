@@ -122,6 +122,14 @@ export const posts: BlogPost[] = [
     readTime: "7 min read",
   },
   {
+    slug: "ai-mind-map-from-photo",
+    title: "AI Mind Map Generator from Photo: Turn Any Image into a Mind Map",
+    description: "Upload a photo and instantly generate a structured mind map with AI. GoTaskMind's free image-to-mind-map tool converts screenshots, slides, whiteboards, and textbook pages into visual mind maps in seconds.",
+    keywords: ["ai mind map from photo", "image to mind map", "photo to mind map", "mind map from image", "screenshot to mind map", "ai mind map generator from photo"],
+    date: "2026-05-17",
+    readTime: "6 min read",
+  },
+  {
     slug: "reddit-best-free-mind-map-tools",
     title: "Reddit's Top 5 Free Mind Map Tools (2026): What Real Users Recommend",
     description: "We analyzed hundreds of Reddit threads to find the best free mind map tools in 2026. Here's what real users actually recommend and why.",

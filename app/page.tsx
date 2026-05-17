@@ -17,7 +17,11 @@ const exampleTopics = [
 const faqItems = [
   {
     q: "What is GoTaskMind?",
-    a: "GoTaskMind is a free AI-powered mind map generator. Simply enter any topic and instantly get a beautiful, downloadable mind map.",
+    a: "GoTaskMind is a free AI-powered mind map generator. Enter any topic or upload a photo and instantly get a beautiful, downloadable mind map.",
+  },
+  {
+    q: "Can I generate a mind map from a photo?",
+    a: "Yes! Switch to 'From Photo' mode, upload an image (screenshot, slide, whiteboard, textbook page), and AI will analyze it and generate a structured mind map automatically.",
   },
   {
     q: "Is it really free?",
@@ -29,11 +33,11 @@ const faqItems = [
   },
   {
     q: "What AI model do you use?",
-    a: "GoTaskMind is powered by advanced AI language models that understand your topic and generate structured, meaningful mind maps.",
+    a: "GoTaskMind is powered by advanced AI language models and vision models that understand your topic or image and generate structured, meaningful mind maps.",
   },
   {
     q: "Is my data stored?",
-    a: "No. We don't store your topics or generated maps. Everything runs in real-time and nothing is saved on our servers.",
+    a: "No. We don't store your topics, images, or generated maps. Everything runs in real-time and nothing is saved on our servers.",
   },
 ]
 
@@ -282,7 +286,7 @@ export default function HomePage() {
             AI Mind Map Generator
           </h1>
           <p className="text-center text-muted-foreground mb-6 text-sm">
-            Describe any topic and get an instant mind map. Free, no account needed.
+            Enter any topic or upload a photo to get an instant mind map. Free, no account needed.
           </p>
 
           {/* Mode switcher */}
@@ -501,8 +505,8 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4">
                   <MousePointerClick className="h-6 w-6" />
                 </div>
-                <div className="text-sm font-semibold mb-1">1. Enter topic</div>
-                <p className="text-xs text-muted-foreground">Type any topic or idea you want to explore</p>
+                <div className="text-sm font-semibold mb-1">1. Enter topic or photo</div>
+                <p className="text-xs text-muted-foreground">Type any topic or upload an image you want to explore</p>
               </div>
               <div className="text-center p-6 rounded-xl bg-white border shadow-sm">
                 <div className="w-12 h-12 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-4">

@@ -17,6 +17,7 @@ import { XmindVsMindmeister } from "./articles/xmind-vs-mindmeister"
 import { GitmindVsXmind } from "./articles/gitmind-vs-xmind"
 import { MindmeisterFreeAlternatives } from "./articles/mindmeister-free-alternatives"
 import { RedditBestFreeMindMapTools } from "./articles/reddit-best-free-mind-map-tools"
+import { AiMindMapFromPhoto } from "./articles/ai-mind-map-from-photo"
 
 const articleComponents: Record<string, React.ComponentType> = {
   "ai-mind-map-generator": AiMindMapGenerator,
@@ -34,6 +35,7 @@ const articleComponents: Record<string, React.ComponentType> = {
   "gitmind-vs-xmind": GitmindVsXmind,
   "mindmeister-free-alternatives": MindmeisterFreeAlternatives,
   "reddit-best-free-mind-map-tools": RedditBestFreeMindMapTools,
+  "ai-mind-map-from-photo": AiMindMapFromPhoto,
 }
 
 export async function generateStaticParams() {
