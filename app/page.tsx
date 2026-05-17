@@ -44,6 +44,8 @@ export default function HomePage() {
   const [error, setError] = useState("")
   const [selectedMode, setSelectedMode] = useState<'text' | 'image'>('text')
   const [imageUrl, setImageUrl] = useState('')
+  const [imageBase64, setImageBase64] = useState('')
+  const [imagePreview, setImagePreview] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -63,15 +65,21 @@ export default function HomePage() {
 
     // Image mode
     if (selectedMode === 'image') {
-      if (!imageUrl.trim()) return
+      if (!imageUrl.trim() && !imageBase64) return
       setIsAnalyzing(true)
       setError('')
       setMarkdown('')
       try {
+        const payload: any = {}
+        if (imageBase64) {
+          payload.imageBase64 = imageBase64
+        } else {
+          payload.imageUrl = imageUrl.trim()
+        }
         const res = await fetch('/api/analyze-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: imageUrl.trim() }),
+          body: JSON.stringify(payload),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Analysis failed')
@@ -105,7 +113,7 @@ export default function HomePage() {
     } finally {
       setIsGenerating(false)
     }
-  }, [topic, isGenerating, isAnalyzing, selectedMode, imageUrl])
+  }, [topic, isGenerating, isAnalyzing, selectedMode, imageUrl, imageBase64])
 
   // Render mind map using markmap
   useEffect(() => {
@@ -222,6 +230,33 @@ export default function HomePage() {
     }
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const result = event.target?.result as string
+      setImagePreview(result)
+      setImageBase64(result.split(',')[1]) // Remove data:image/...;base64, prefix
+      setImageUrl('') // Clear URL when file is uploaded
+      setError('')
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col">
       {/* Header */}
@@ -273,30 +308,58 @@ export default function HomePage() {
           </div>
 
           {selectedMode === 'image' ? (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Paste image URL..."
-                  className="w-full h-20 pl-10 pr-4 py-3 text-base border rounded-lg bg-white resize-none"
-                />
+            <div className="flex flex-col gap-2">
+              {/* Image preview */}
+              {imagePreview && (
+                <div className="relative border rounded-lg overflow-hidden bg-muted/30">
+                  <img src={imagePreview} alt="Uploaded" className="max-h-40 mx-auto object-contain" />
+                  <button
+                    onClick={() => { setImagePreview(''); setImageBase64('') }}
+                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1 flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => { setImageUrl(e.target.value); if (e.target.value) { setImageBase64(''); setImagePreview('') } }}
+                    placeholder="Paste image URL..."
+                    className="flex-1 h-20 px-4 py-3 text-base border rounded-lg bg-white"
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-20 px-4 border rounded-lg bg-white hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 text-sm text-muted-foreground"
+                  >
+                    <Upload className="h-5 w-5" />
+                    <span className="text-xs">Upload</span>
+                  </button>
+                </div>
+                <Button
+                  onClick={generate}
+                  disabled={isAnalyzing || (!imageUrl.trim() && !imageBase64)}
+                  className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-5 w-5" />
+                  )}
+                  <span className="hidden sm:inline">Analyze</span>
+                </Button>
               </div>
-              <Button
-                onClick={generate}
-                disabled={isAnalyzing || !imageUrl.trim()}
-                className="h-14 sm:h-20 sm:w-auto shrink-0 flex items-center justify-center gap-2 px-6"
-                size="lg"
-              >
-                {isAnalyzing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-5 w-5" />
-                )}
-                <span className="hidden sm:inline">Analyze</span>
-              </Button>
+              <p className="text-xs text-muted-foreground">Paste a URL or upload an image (max 5MB). Supports JPG, PNG, WebP.</p>
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2">
